@@ -16,7 +16,9 @@ pal({
   w: "#f4f8fa", // eye white
   e: "#0a0a12", // pupil
   p: "#f4a1bb", // lips
-  M: "#a9798b", // lip shade
+  q: "#d985ac", // lip deep pink
+  M: "#936d7a", // lip mauve
+  m: "#bb8d9f", // lip light mauve
   P: "#51263a", // mouth line
   n: "#ff9db0", // blush
 })
@@ -45,11 +47,11 @@ const HALF = [
   "kffDfklttttkkkkkttttt",
   ".kfDfkTtttttttttttttt",
   "..kffkTtkkkkkkkkkkkkk",
-  "...kkkkkppppppppppppp",
-  "....kpPpppppppppppppp",
+  "...kkkkkqpppppppppppp",
   "....kppPPPPPPPppppppp",
   "....kpppppppppPPPPPPP",
-  ".....kMMMMMMMMMMMMMMM",
+  ".....kppppppppqqqqqqq",
+  "......kkMMMMMMMMMMMMM",
   "....kkkkkkkkkkkkkkkkk",
   "....klttTTTTTTTTTTTTT",
   "....klltttttttttttttt",
