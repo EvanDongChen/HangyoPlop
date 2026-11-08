@@ -119,9 +119,9 @@ function eyes(rows, mode, dy = 0) {
       }
       continue
     }
-    for (let y = 17; y <= 27; y++) for (let x = 8; x <= 18; x++) {
-      const c = rows[Y(y)][X(x)]
-      if (c === "k" || c === "w") put(rows, X(x), Y(y), "t")
+    // keep the round eye outline; closed eyes fill the white with the eyelid
+    if (mode === "closed") for (let y = 17; y <= 27; y++) for (let x = 8; x <= 18; x++) {
+      if (rows[Y(y)][X(x)] === "w") put(rows, X(x), Y(y), "t")
     }
     const pts = {
       closed: [[9, 22], [10, 23], [11, 23], [12, 23], [13, 23], [14, 23], [15, 23], [16, 23], [17, 22]],
