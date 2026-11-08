@@ -1032,6 +1032,21 @@ if (process.env.HANGYO_TOUR) {
       let n = 0
       while (Date.now() < until) { await shot(`idle/${String(n++).padStart(3, "0")}`); await wait(200) }
     }
+    // play each idle fidget on demand and record it
+    if (process.env.HANGYO_TOUR_FIDGETS) {
+      await win.webContents.executeJavaScript("document.getElementById('rem-close').click()")
+      store.set("position", { cx: wa.x + wa.width / 2, bottom: wa.y + wa.height / 2 + 150 })
+      applyLayout({ mode: "normal" })
+      await wait(500)
+      for (const kind of ["glance", "bubbles", "fins", "sway", "yawn", "hop", "stretch"]) {
+        fs.mkdirSync(path.join(dir, "fidgets", kind), { recursive: true })
+        const ms = await win.webContents.executeJavaScript(`window.__hangyoFidget(${JSON.stringify(kind)})`)
+        const until = Date.now() + ms + 500
+        let n = 0
+        while (Date.now() < until) { await shot(`fidgets/${kind}/${String(n++).padStart(3, "0")}`); await wait(60) }
+        await wait(400)
+      }
+    }
     // a frame sequence of Claude thinking then finishing, for the README
     if (process.env.HANGYO_TOUR_SEQ) {
       await win.webContents.executeJavaScript("document.getElementById('rem-close').click()")

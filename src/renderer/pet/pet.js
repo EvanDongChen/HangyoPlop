@@ -412,6 +412,10 @@
     let pick = FIDGETS[0]
     for (const f of FIDGETS) { if ((r -= f[1]) < 0) { pick = f; break } }
     if (S.lastFidget === pick[0]) pick = FIDGETS[(FIDGETS.indexOf(pick) + 1) % FIDGETS.length]
+    startFidget(pick, t)
+  }
+
+  function startFidget(pick, t) {
     S.lastFidget = pick[0]
     S.fidget = { kind: pick[0], start: t, until: t + pick[2] }
     if (pick[0] === "hop") S.jump = { start: t, hops: 1 }
@@ -421,6 +425,15 @@
       body.classList.add("bubbling")
     }
     S.nextFidget = t + pick[2] + 6000 + Math.random() * 8000
+  }
+
+  // Lets the developer tour play a specific fidget (HANGYO_TOUR_FIDGETS).
+  window.__hangyoFidget = (kind) => {
+    const pick = FIDGETS.find((f) => f[0] === kind)
+    S.lastBusy = 0
+    S.transient = null
+    if (pick) startFidget(pick, now())
+    return pick ? pick[2] : 0
   }
 
   function fidgetPose(t) {

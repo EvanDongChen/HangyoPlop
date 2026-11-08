@@ -168,26 +168,28 @@ body.purring #hearts { display: block; }
 }
 
 /* bubbles rising from his lips while he blows them (an idle fidget) */
-#blubs { position: absolute; left: calc(18 * var(--s)); top: calc(18 * var(--s)); width: calc(8 * var(--s)); height: calc(18 * var(--s)); pointer-events: none; display: none; z-index: 2; }
+#blubs { position: absolute; left: calc(19 * var(--s)); top: calc(20 * var(--s)); width: calc(8 * var(--s)); height: calc(18 * var(--s)); pointer-events: none; display: none; z-index: 2; }
 body.bubbling #blubs { display: block; }
 #blubs span {
   position: absolute;
   bottom: 0;
-  width: calc(2.5 * var(--s));
-  height: calc(2.5 * var(--s));
-  border: max(1px, calc(0.6 * var(--s))) solid #4aa8d8;
-  background: rgba(220, 245, 255, 0.55);
+  width: calc(3.5 * var(--s));
+  height: calc(3.5 * var(--s));
+  border: max(2px, calc(0.8 * var(--s))) solid #1f84b8;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: inset calc(0.6 * var(--s)) calc(0.6 * var(--s)) 0 rgba(127, 200, 255, 0.6);
   border-radius: 50%;
   opacity: 0;
   animation: blub-rise 1.4s steps(7) 2;
 }
 #blubs span:nth-child(1) { left: 20%; }
-#blubs span:nth-child(2) { left: 55%; animation-delay: 0.45s; width: calc(1.8 * var(--s)); height: calc(1.8 * var(--s)); }
-#blubs span:nth-child(3) { left: 5%; animation-delay: 0.9s; width: calc(3 * var(--s)); height: calc(3 * var(--s)); }
+#blubs span:nth-child(2) { left: 55%; animation-delay: 0.45s; width: calc(2.5 * var(--s)); height: calc(2.5 * var(--s)); }
+#blubs span:nth-child(3) { left: 5%; animation-delay: 0.9s; width: calc(4.5 * var(--s)); height: calc(4.5 * var(--s)); }
 @keyframes blub-rise {
   0% { transform: translate(0, 0); opacity: 0; }
   15% { opacity: 1; }
-  100% { transform: translate(calc(1.5 * var(--s)), calc(-16 * var(--s))); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translate(calc(14 * var(--s)), calc(-14 * var(--s))); opacity: 0; }
 }
 body[data-mode="peek"] #blubs { display: none !important; }
 #zzz { right: 2%; top: 0; width: 30%; height: 30%; }
