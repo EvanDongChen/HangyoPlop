@@ -4,14 +4,17 @@
   const api = window.pet
   const C = window.HangyoColors
 
-  const SW = 42
-  const SH = 48
+  const SW = 41
+  const SH = 58
   const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL", "pressR", "scroll", "hunt",
     "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
   // Eye-center row for poses that have open eyes (pupils are drawn live). Columns are fixed.
-  const EYE_ROW = { idle0: 18, idle1: 19, pressL: 18, pressR: 18, scroll: 18, hunt: 22, drink0: 18, drag: 18, think: 18, peek: 18 }
-  const EYE_COLS = [15, 27]
-  const HEAD_ROWS = 30 // rows 0..29 are the head: petting zone
+  // Poses with open eyes, and how far each one moved the head down from idle0.
+  const EYE_SHIFT = { idle0: 0, idle1: 1, pressL: 0, pressR: 0, scroll: 0, hunt: 3, drink0: 0, drag: 0, think: 0, peek: 0 }
+  const EYE_CX = [13, 27] // eye-white centers (columns) in idle0
+  const EYE_CY = 27 // eye-white center row in idle0
+  const EYE_WHITE = [0xf4, 0xf8, 0xfa]
+  const HEAD_ROWS = 40 // rows 0..39 are the head and lips: petting zone
 
   const $ = (id) => document.getElementById(id)
   const body = document.body
@@ -205,34 +208,42 @@
     }
     const dist = Math.hypot(dx, dy)
     if (dist < 6) return [0, 0]
-    const ox = Math.abs(dx) / dist > 0.38 ? Math.sign(dx) : 0
-    const oy = Math.abs(dy) / dist > 0.5 ? Math.sign(dy) : 0
-    return [ox, oy]
+    // look further toward the edge of the eye the further away the cursor is
+    const reach = Math.min(1, dist / 160)
+    return [Math.round((dx / dist) * 3 * reach), Math.round((dy / dist) * 2.5 * reach)]
   }
 
   function drawPupils(pose, t) {
-    const row = EYE_ROW[pose]
-    if (row === undefined) return
-    let [ox, oy] = pupilOffset(EYE_COLS[0] + 6, row)
-    if (pose === "think") { oy = 1; if (S.agent === "thinking") ox = Math.floor(t / 1500) % 2 ? 1 : -1 }
+    const shift = EYE_SHIFT[pose]
+    if (shift === undefined) return
+    const cy = EYE_CY + shift
+    let [ox, oy] = pupilOffset((EYE_CX[0] + EYE_CX[1]) / 2, cy)
+    if (pose === "think") { oy = 2; if (S.agent === "thinking") ox = Math.floor(t / 1500) % 2 ? 2 : -2 }
     if (pose === "hunt") oy = Math.max(oy, 0)
-    for (const ex of EYE_COLS) {
-      const x = ex - 1 + ox
-      const y = row - 1 + oy
-      ctx.fillStyle = "#151a28"
-      ctx.fillRect(x, y, 3, 3)
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(x, y, 1, 1)
+    // a 3x4 pupil, painted only over eye-white pixels so it never spills past the eye
+    const img = ctx.getImageData(0, 0, SW, SH)
+    const d = img.data
+    for (const cx of EYE_CX) {
+      const x0 = cx - 1 + ox
+      const y0 = cy - 2 + oy
+      for (let y = y0; y < y0 + 4; y++) for (let x = x0; x < x0 + 3; x++) {
+        const i = (y * SW + x) * 4
+        if (d[i] !== EYE_WHITE[0] || d[i + 1] !== EYE_WHITE[1] || d[i + 2] !== EYE_WHITE[2]) continue
+        const shine = x === x0 && y === y0
+        d[i] = d[i + 1] = shine ? 255 : 10
+        d[i + 2] = shine ? 255 : 18
+      }
     }
+    ctx.putImageData(img, 0, 0)
   }
 
   function drawPaper(t) {
     const len = Math.round(S.scroll.paper)
     if (len <= 0) return
-    const x = 15
-    const w = 13
-    const y0 = 39
-    ctx.fillStyle = "#1b2338"
+    const x = 13
+    const w = 15
+    const y0 = 53
+    ctx.fillStyle = "#0d2236"
     ctx.fillRect(x - 1, y0, w + 2, len + 1)
     ctx.fillStyle = "#fff1c9"
     ctx.fillRect(x, y0, w, len)
@@ -329,7 +340,7 @@
 
   function stepScroll(t, dt) {
     const sc = S.scroll
-    const goal = t < sc.until ? 9 : 0
+    const goal = t < sc.until ? 5 : 0
     sc.paper += (goal - sc.paper) * Math.min(1, dt / 120)
     if (sc.paper < 0.2) sc.paper = 0
   }

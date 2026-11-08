@@ -28,8 +28,8 @@ html, body {
 
 #pet-box {
   position: absolute;
-  width: calc(42 * var(--s));
-  height: calc(48 * var(--s));
+  width: calc(41 * var(--s));
+  height: calc(58 * var(--s));
 }
 
 #pet {
@@ -66,7 +66,7 @@ body.dragging #name-badge { display: none !important; }
 
 #bubble {
   position: absolute;
-  bottom: calc(100% - 2 * var(--s));
+  bottom: calc(100% - 5 * var(--s));
   left: 50%;
   transform: translateX(-50%);
   width: max-content;

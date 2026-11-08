@@ -1,228 +1,236 @@
-// Hangyodon desktop pet: every pose comes from one parametric drawing function,
-// so proportions and colors stay identical across frames.
-// Pupils are NOT drawn here: the app draws them at runtime so the eyes can follow the cursor.
-// Build: node .claude/skills/pxl-pixel-art/bin/pxl.js build art/hangyodon.px.js --out assets/sprites-build
+// Hangyodon, traced from the user's reference pixel art (art/ref/reference.png).
+// scripts/extract-reference.py recovered the native 53x56 grid from the upscaled image;
+// the grid below is that trace, cleaned up by hand: 1px outlines, flat fills, symmetric body,
+// eyes left empty (the app draws the pupils live so they follow the cursor).
 
 pal({
-  k: "#1b2338", // outline
-  h: "#c9f1f5", // skin highlight
-  b: "#86cfe0", // skin
-  B: "#5aa6c4", // skin shade
-  f: "#3d80b9", // fin
-  F: "#2b5c90", // fin shade
-  c: "#f1faf8", // belly
-  C: "#c9e3e4", // belly shade
-  r: "#e9516c", // lips
-  R: "#b23250", // lip shade / mouth
-  p: "#ffa3b4", // lip highlight
-  w: "#ffffff", // eye white
-  e: "#151a28", // eye lines
-  n: "#ffb3c1", // blush
-  g: "#a7afc0", // keyboard
+  k: "#0d2236", // outline
+  t: "#33ccba", // teal
+  T: "#2aa9b4", // teal shade
+  l: "#6fdccf", // teal rim light
+  s: "#8eeee0", // belly scales
+  f: "#1fa6de", // fin / crest blue
+  F: "#1f84b8", // fin mid
+  D: "#1d5f8a", // fin ridge
+  h: "#6cc8f2", // fin highlight
+  w: "#f4f8fa", // eye white
+  e: "#0a0a12", // pupil
+  p: "#f4a1bb", // lips
+  q: "#d985ac", // lip deep pink
+  M: "#936d7a", // lip mauve
+  m: "#bb8d9f", // lip light mauve
+  P: "#51263a", // mouth line
+  n: "#ff9db0", // blush
+  g: "#b7c0cf", // keyboard
   G: "#6d778d", // keyboard keys
-  m: "#fff1c9", // paper / cup
-  M: "#d9b36a", // paper / cup shade
+  y: "#fff1c9", // paper / mug
+  Y: "#d9b36a", // paper / mug shade
   u: "#7fc8ff", // water
 })
-ramps("kFfBbh", "kRrp", "kCcw", "kGgw", "kMm")
 
-const CX = 20
+// The master idle sprite (41x53), as edited by hand in the Hangyodon Pixel Editor artifact.
+// Row 0 is blank; IDLE holds rows 1..52.
+const IDLE = [
+  "....................kkkkk................",
+  "...................khhfffk...............",
+  "..................khhfffffkkk............",
+  "..................kffDFfffffFk...........",
+  ".................kfffDFffDDffFk..........",
+  ".................kfffDFfDFFfffFk.........",
+  ".................kfffDFfDFfffDfk.........",
+  "............kkkkkkkkkkkkkkkkDFfk.........",
+  "..........kklllllllllllllllkkkk..........",
+  ".........kllllltttttttttttlllllk.........",
+  "........kllltttttttttttttttttlllk........",
+  "........klltttttttttttttttttttllk........",
+  ".......klltttttttttttttttttttttllk.......",
+  "......klltttttttttttttttttttttttllk......",
+  "......kltttttttttttttttttttttttttlk......",
+  "......kltttttttttttttttttttttttttlk......",
+  ".....klttttkkkkktttttttttkkkkkttttlk.....",
+  ".....kltttkwwwwwktttttttkwwwwwktttlk.....",
+  "..kkkklttkwwwwwwwktttttkwwwwwwwkttlkkkk..",
+  ".khffkltkwwwwwwwwwktttkwwwwwwwwwktlkffhk.",
+  "khhffkltkwwwwwwwwwktttkwwwwwwwwwktlkffhhk",
+  "khfDDkltkwwwwwwwwwktttkwwwwwwwwwktlkDDfhk",
+  "kffFFkltkwwwwwwwwwktttkwwwwwwwwwktlkFFffk",
+  "kffffkltkwwwwwwwwwktttkwwwwwwwwwktlkffffk",
+  "kfDDDklttkwwwwwwwktttttkwwwwwwwkttlkDDDfk",
+  "kffFFkltttkwwwwwktttttttkwwwwwktttlkFFFfk",
+  "kffffklttttkkkkktttttttttkkkkkttttlkffffk",
+  ".kfffkTtttttttttttttttttttttttttttTkfffk.",
+  "..kffkTtttkkkkkkkkkkkkkkkkkkkkktttTkffk..",
+  "...kkkTkkkqpppppppppppppppppppqkkkTkkk...",
+  ".....kkpppppppppppppppppppppppppppkk.....",
+  "......kpPPPPPPpppppppppppppPPPPPPpk......",
+  "......kpppppppPPPPPPPPPPPPPpppppppk......",
+  ".....klkkMMMMMMMMMMMMMMMMMMMMMMMkklk.....",
+  ".....klTkkkkkkkkkkkkkkkkkkkkkkkkkTlk.....",
+  "....klttTTTTTTTTTTTTTTTTTTTTTTTTTttlk....",
+  "....kltttttttttttttttttttttttttttttlk....",
+  "...klttttttTtttTttTtttTttTtttTttttttlk...",
+  ".kkltttttttTtttTttTtttTttTtttTtttttttlkk.",
+  ".kllttttttttTTTttttTTTttttTTTttttttttllk.",
+  ".kTTtttttttttttttttttttttttttttttttttTTk.",
+  "..kTTTTTkkttttTtttTtttTtttTttttkkTTTTTk..",
+  "...kkkkkkTttttTtttTtttTtttTttttTkkkkkk...",
+  ".......kTttttttTTTtttttTTTttttttTk.......",
+  ".......kTtttttttttttttttttttttttTk.......",
+  ".......kTtttttttttttttttttttttttTk.......",
+  ".......kTtttttttttttttttttttttttTk.......",
+  ".......kTttttttttTTTTTTTttttttttTk.......",
+  "......kTTttttttttTkkkkkTttttttttTTk......",
+  ".....kTtttttttttttttktttttttttttttTk.....",
+  ".....kTTttTttTTttTTTkTTTttTTttTttTTk.....",
+  "......kkkkkkkkkkkkkkkkkkkkkkkkkkkkk......",
+]
+IDLE.forEach((r, i) => { if (r.length !== 41) throw new Error(`IDLE row ${i + 1} has ${r.length} cols`) })
 
-// Mirror a poly's x coordinate (vertices sit on pixel corners).
-const mxx = (x) => 2 * CX + 1 - x
-const mirrorPoly = (pts) => pts.map((v, i) => (i % 2 === 0 ? mxx(v) : v))
+sprite("idle", { w: 41, h: 53 }, grid(0, 1, IDLE.join("\n")))
 
-function outlinedEllipse(c, cx, cy, rx, ry, col) {
-  c.ellipse(cx, cy, rx + 1, ry + 1, "k")
-  c.ellipse(cx, cy, rx, ry, col)
+// ---------------------------------------------------------------- poses
+// Every pose is an edit of IDLE on a taller 41x58 canvas (5 rows of headroom), so the art
+// stays identical to the master everywhere the pose doesn't change it.
+const W = 41, PH = 58, OFF = 5
+const BLANK = ".".repeat(W)
+const BASE = [...Array(OFF).fill(BLANK), BLANK, ...IDLE]
+const mx = (x) => W - 1 - x
+
+const put = (rows, x, y, ch) => {
+  if (y < 0 || y >= rows.length || x < 0 || x >= W) return
+  rows[y] = rows[y].slice(0, x) + ch + rows[y].slice(x + 1)
 }
 
-function arm(c, x0, y0, x1, y1) {
+// Shift everything above body row 46 (a plain row under the gills) down by d rows: a squash/bob.
+const squash = (rows, d) => [...Array(d).fill(BLANK), ...rows.slice(0, 46 + OFF), ...rows.slice(46 + OFF + d)]
+// Stretch the body d rows taller by repeating a plain body row.
+const stretch = (rows, d) => [...rows.slice(d, 46 + OFF), ...Array(d).fill(rows[46 + OFF]), ...rows.slice(46 + OFF)]
+
+// Eyes. dy = how far the head was shifted. Boxes are the eye outlines in IDLE coordinates.
+function eyes(rows, mode, dy = 0) {
+  if (mode === "open") return
+  const Y = (y) => y + OFF + dy
+  for (const side of ["L", "R"]) {
+    const X = (x) => (side === "L" ? x : mx(x))
+    if (mode === "lid") {
+      for (let x = 9; x <= 17; x++) {
+        for (const y of [18, 19, 20]) if (rows[Y(y)][X(x)] === "w") put(rows, X(x), Y(y), "T")
+        if (rows[Y(21)][X(x)] === "w") put(rows, X(x), Y(21), "k")
+      }
+      continue
+    }
+    for (let y = 17; y <= 27; y++) for (let x = 8; x <= 18; x++) {
+      const c = rows[Y(y)][X(x)]
+      if (c === "k" || c === "w") put(rows, X(x), Y(y), "t")
+    }
+    const pts = {
+      closed: [[9, 22], [10, 23], [11, 23], [12, 23], [13, 23], [14, 23], [15, 23], [16, 23], [17, 22]],
+      happy: [[9, 23], [10, 22], [11, 21], [12, 21], [13, 21], [14, 21], [15, 21], [16, 22], [17, 23]],
+      squeeze: [[11, 19], [12, 20], [13, 21], [14, 22], [13, 23], [12, 24], [11, 25], [10, 19], [10, 25]],
+    }[mode]
+    for (const [x, y] of pts) put(rows, X(x), Y(y), "k")
+  }
+}
+
+// Mouth "o": swap the mouth line for a small open mouth.
+function mouthO(rows, dy = 0) {
+  const Y = (y) => y + OFF + dy
+  for (const y of [31, 32, 33]) for (let x = 7; x <= 33; x++) if (rows[Y(y)][x] === "P") put(rows, x, Y(y), "p")
+  for (let x = 18; x <= 22; x++) { put(rows, x, Y(31), "P"); put(rows, x, Y(33), "P") }
+  for (let x = 17; x <= 23; x++) put(rows, x, Y(32), "P")
+}
+
+function blush(rows, dy = 0) {
+  for (const x of [8, 9, 31, 32]) put(rows, x, 28 + OFF + dy, "n")
+}
+
+// Remove an arm stub and close the body outline where it was. dy = squash amount.
+function noArm(rows, side, dy = 0) {
+  const edge = { 38: 4, 39: 5, 40: 5, 41: 6, 42: 6, 43: 7 }
+  for (const [yy, c] of Object.entries(edge)) {
+    const y = Number(yy) + OFF + dy
+    for (let x = 0; x <= 9; x++) {
+      const ch = x < c ? "." : x === c ? "k" : x === c + 1 ? "T" : "t"
+      put(rows, side === "L" ? x : mx(x), y, ch)
+    }
+  }
+}
+
+const toGrid = (rows) => {
+  const first = rows.findIndex((r) => r !== BLANK)
+  return grid(0, first, rows.slice(first).join("\n"))
+}
+
+// A stubby arm from the shoulder to (x1, y1): outline then fill, rounded ends.
+const arm = (x0, y0, x1, y1) => (c) => {
   c.line(x0, y0, x1, y1, "k", 5)
-  c.line(x0, y0, x1, y1, "B", 3)
+  c.line(x0, y0, x1, y1, "t", 3)
+}
+const SH = 45 // shoulder row on the 58-row canvas
+const armL = (x1, y1, dy = 0) => arm(7, SH + dy, x1, y1 + dy)
+const armR = (x1, y1, dy = 0) => arm(mx(7), SH + dy, mx(x1), y1 + dy)
+
+function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 0, arms, props = [], after = [] } = {}) {
+  let rows = BASE.slice()
+  if (sq) rows = squash(rows, sq)
+  if (tall) rows = stretch(rows, tall)
+  const dy = sq - tall
+  eyes(rows, e, dy)
+  if (mouth === "o") mouthO(rows, dy)
+  if (b) blush(rows, dy)
+  if (arms) for (const side of arms.remove || ["L", "R"]) noArm(rows, side, dy)
+  sprite(name, { w: W, h: PH }, toGrid(rows), ...props, ...(arms ? arms.draw : []), ...after)
 }
 
-// arm presets for the LEFT arm, relative to body center (bx, by); right arm is mirrored.
-const ARMS = {
-  down: [-7, -2, -10, 3],
-  up: [-8, -4, -14, -26],
-  front: [-6, -2, -2, 1],
-  pressDown: [-6, -2, -5, 6],
-  pressUp: [-6, -2, -6, 1],
-  pounce: [-6, 0, -9, 6],
-  dangle: [-8, -4, -13, -14],
-  wave: [-8, -3, -14, -13],
-  chin: [-6, -2, -2, -6],
+const keyboard = (c) => {
+  c.rect(4, 49, 33, 9, "k")
+  c.rect(5, 50, 31, 7, "g")
+  for (let i = 0; i < 8; i++) { c.hline(6 + i * 4, 51, 3, "G"); c.hline(6 + i * 4, 55, 3, "G") }
+  for (let i = 0; i < 7; i++) c.hline(8 + i * 4, 53, 3, "G")
+}
+const roll = (c) => {
+  c.rect(11, 47, 19, 6, "k")
+  c.rect(12, 48, 17, 4, "y")
+  c.hline(12, 51, 17, "Y")
+  c.rect(11, 47, 2, 6, "Y"); c.rect(28, 47, 2, 6, "Y")
+  c.vline(11, 47, 6, "k"); c.vline(29, 47, 6, "k")
+}
+const mug = (tilt) => (c) => {
+  const x = 27, y = tilt ? 32 : 35
+  c.rect(x, y, 7, 8, "k")
+  c.rect(x + 1, y + 1, 5, 6, "y")
+  c.vline(x + 5, y + 1, 6, "Y")
+  c.hline(x + 1, y + 1, 5, tilt ? "u" : "Y")
+  c.rect(x + 7, y + 2, 2, 4, "k"); c.px(x + 7, y + 3, "y"); c.px(x + 7, y + 4, "y")
 }
 
-function drawArm(c, mode, side, bx, by) {
-  const a = ARMS[mode]
-  if (!a) return
-  const s = side === "L" ? 1 : -1
-  const X = (dx) => (side === "L" ? bx + dx : 2 * CX - (bx + dx))
-  arm(c, X(a[0]), by + a[1], X(a[2]), by + a[3])
-  void s
-}
-
-function eye(c, x, y, mode) {
-  if (mode === "open" || mode === "lid") {
-    c.ellipse(x, y, 3, 3, "e")
-    c.ellipse(x, y, 2, 2, "w")
-    if (mode === "lid") { c.hline(x - 2, y - 2, 5, "B"); c.hline(x - 2, y - 1, 5, "e") }
-  } else if (mode === "closed") {
-    c.px(x - 2, y, "e"); c.hline(x - 1, y + 1, 3, "e"); c.px(x + 2, y, "e")
-  } else if (mode === "happy") {
-    c.px(x - 2, y + 1, "e"); c.px(x - 1, y, "e"); c.px(x, y - 1, "e"); c.px(x + 1, y, "e"); c.px(x + 2, y + 1, "e")
-  } else if (mode === "squeeze") {
-    c.px(x - 2, y - 1, "e"); c.px(x - 1, y, "e"); c.px(x, y, "e"); c.px(x + 1, y, "e"); c.px(x + 2, y - 1, "e")
-    c.px(x - 1, y + 1, "e"); c.px(x + 1, y + 1, "e")
-  }
-}
-
-function lips(c, x, y, mode) {
-  if (mode === "o") {
-    c.ellipse(x, y + 1, 4, 3, "k")
-    c.ellipse(x, y + 1, 3, 2, "r")
-    c.ellipse(x, y + 1, 1, 1, "R")
-    c.px(x - 2, y, "p")
-    return
-  }
-  c.ellipse(x, y, 6, 3, "k")
-  c.ellipse(x, y, 5, 2, "r")
-  c.hline(x - 4, y, 9, "R")
-  if (mode === "smile") { c.px(x - 5, y - 1, "R"); c.px(x + 5, y - 1, "R") }
-  c.hline(x - 3, y - 2, 2, "p")
-  c.px(x + 2, y - 2, "p")
-}
-
-/**
- * o.hy head center y, o.by body center y, o.armL/o.armR arm presets,
- * o.eyes eye mode, o.mouth lip mode, o.blush, o.prop ("keyboard" | "roll" | "cup" | "cupTilt"),
- * o.feet ("stand" | "tuck" | "dangle"), o.armsBehind (draw arms before body).
- */
-function hangyodon(c, o = {}) {
-  // +4 leaves headroom so the crest never clips in tall poses
-  const hy = (o.hy ?? 14) + 4
-  const by = (o.by ?? 30) + 4
-  const armL = o.armL ?? "down"
-  const armR = o.armR ?? armL
-  const feet = o.feet ?? "stand"
-
-  const raised = (m) => m === "up" || m === "dangle" || m === "wave"
-
-  // feet
-  if (feet !== "tuck") {
-    const fy = feet === "dangle" ? by + 8 : by + 7
-    outlinedEllipse(c, CX - 4, fy, 3, 1, "B")
-    outlinedEllipse(c, CX + 4, fy, 3, 1, "B")
-  }
-
-  // body + belly
-  outlinedEllipse(c, CX, by, 8, 7, "b")
-  c.ellipse(CX, by + 1, 5, 5, "c")
-  c.shade((x, y) => ((x - CX) / 5) ** 2 + ((y - by - 1) / 5) ** 2 <= 1 && y >= by + 4)
-  c.shade((x, y) => ((x - CX) / 8.5) ** 2 + ((y - by) / 7.5) ** 2 <= 1 && x >= CX + 5 && c.is(x, y, "b"))
-
-  if (feet === "tuck") {
-    outlinedEllipse(c, CX - 4, by + 6, 2, 1, "B")
-    outlinedEllipse(c, CX + 4, by + 6, 2, 1, "B")
-  }
-
-  // side fins (ears), dorsal crest
-  const finL = [CX - 10, hy - 4, CX - 18, hy - 9, CX - 17, hy + 1, CX - 10, hy + 4]
-  const crest = [CX - 4, hy - 8, CX - 2, hy - 14, CX + 1, hy - 11, CX + 3, hy - 15, CX + 5, hy - 8]
-  for (const pts of [finL, mirrorPoly(finL), crest]) c.poly(pts, "f")
-  c.line(CX - 16, hy - 6, CX - 11, hy - 1, "F")
-  c.line(mxx(CX - 16) - 1, hy - 6, mxx(CX - 11) - 1, hy - 1, "F")
-  c.vline(CX, hy - 10, 2, "F")
-
-  // arms raised above the head: over the fins, behind the head
-  if (raised(armL)) drawArm(c, armL, "L", CX, by)
-  if (raised(armR)) drawArm(c, armR, "R", CX, by)
-
-  // head
-  outlinedEllipse(c, CX, hy, 12, 9, "b")
-  const inHead = (x, y) => ((x - CX) / 12.4) ** 2 + ((y - hy) / 9.4) ** 2 <= 1
-  c.shade((x, y) => inHead(x, y) && !(((x - CX + 2) / 12.4) ** 2 + ((y - hy + 2) / 9.4) ** 2 <= 1) && c.is(x, y, "b"))
-  c.light((x, y) => ((x - CX + 6) / 4) ** 2 + ((y - hy + 5) / 2) ** 2 <= 1 && c.is(x, y, "b"))
-
-  // arms in front of the body (drawn after head when they reach the face)
-  if (!raised(armL) && armL !== "chin") drawArm(c, armL, "L", CX, by)
-  if (!raised(armR) && armR !== "chin") drawArm(c, armR, "R", CX, by)
-
-  // face
-  const eyes = o.eyes ?? "open"
-  eye(c, CX - 6, hy - 1, eyes)
-  eye(c, CX + 6, hy - 1, eyes)
-  if (o.blush) { c.hline(CX - 10, hy + 3, 2, "n"); c.hline(CX + 9, hy + 3, 2, "n") }
-  lips(c, CX, hy + 5, o.mouth ?? "pout")
-
-  // props
-  if (o.prop === "keyboard") {
-    c.rect(CX - 13, by + 4, 27, 6, "k")
-    c.rect(CX - 12, by + 5, 25, 4, "g")
-    for (let i = 0; i < 6; i++) { c.hline(CX - 11 + i * 4, by + 6, 2, "G"); c.hline(CX - 9 + i * 4, by + 7, 2, "G") }
-    // paws on top of the keyboard
-    const ax = (side, mode) => {
-      const a = ARMS[mode]
-      return side === "L" ? CX + a[2] : 2 * CX - (CX + a[2])
-    }
-    for (const [side, mode] of [["L", armL], ["R", armR]]) {
-      const x = ax(side, mode), y = by + ARMS[mode][3]
-      c.ellipse(x, y, 2, 1, "k"); c.ellipse(x, y, 1, 0, "B")
-    }
-  }
-  if (o.prop === "roll") {
-    c.rect(CX - 8, by - 1, 17, 5, "k")
-    c.rect(CX - 7, by, 15, 3, "m")
-    c.hline(CX - 7, by + 2, 15, "M")
-    c.rect(CX - 8, by - 1, 2, 5, "M"); c.rect(CX + 7, by - 1, 2, 5, "M")
-  }
-  if (o.prop === "cup" || o.prop === "cupTilt") {
-    const tilt = o.prop === "cupTilt"
-    const x = CX + 4, y = hy + (tilt ? 3 : 5)
-    arm(c, CX + 7, by - 2, x + 3, y + 7)
-    c.rect(x - 1, y - 1, 8, 9, "k")
-    c.rect(x, y, 6, 7, "m")
-    c.vline(x + 5, y, 7, "M")
-    c.hline(x, y, 6, tilt ? "u" : "M")
-    c.rect(x + 7, y + 2, 2, 3, "k"); c.px(x + 7, y + 3, "m")
-  }
-  if (armL === "chin") drawArm(c, "chin", "L", CX, by)
-  if (armR === "chin") drawArm(c, "chin", "R", CX, by)
-}
-
-const W = 40, H = 46
-const pose = (name, o) => sprite(name, { w: W, h: H, outline: "k" }, (c) => hangyodon(c, o))
-
-pose("idle0", {})
-pose("idle1", { hy: 15, by: 30 })
+pose("idle0")
+pose("idle1", { squash: 1 })
 pose("blink", { eyes: "closed" })
-pose("sleep0", { hy: 16, eyes: "closed", mouth: "pout" })
-pose("sleep1", { hy: 17, eyes: "closed", mouth: "pout" })
-pose("happy0", { eyes: "happy", blush: true, mouth: "smile" })
-pose("happy1", { hy: 15, eyes: "happy", blush: true, mouth: "smile" })
-pose("pressL", { armL: "pressDown", armR: "pressUp", prop: "keyboard", eyes: "open" })
-pose("pressR", { armL: "pressUp", armR: "pressDown", prop: "keyboard", eyes: "open" })
-pose("scroll", { armL: "front", prop: "roll" })
-pose("hunt", { hy: 18, by: 32, armL: "pounce", eyes: "open", mouth: "o", feet: "stand" })
-pose("jumpCrouch", { hy: 18, by: 32, armL: "down", eyes: "squeeze", mouth: "smile" })
-pose("jumpAir", { hy: 12, by: 28, armL: "up", eyes: "happy", mouth: "o", feet: "tuck", blush: true })
-pose("stretch0", { hy: 13, by: 30, armL: "up", eyes: "closed", mouth: "o" })
-pose("stretch1", { hy: 11, by: 29, armL: "up", eyes: "squeeze", mouth: "o", blush: true })
-pose("drink0", { armL: "down", armR: "none", prop: "cup", eyes: "open", mouth: "o" })
-pose("drink1", { armL: "down", armR: "none", prop: "cupTilt", eyes: "closed", mouth: "o", blush: true })
-pose("drag", { armL: "dangle", eyes: "open", mouth: "o", feet: "dangle" })
-pose("think", { armL: "down", armR: "chin", eyes: "lid", mouth: "pout" })
-pose("wave", { armL: "down", armR: "wave", eyes: "happy", mouth: "smile", blush: true })
-pose("peek", { armL: "front", eyes: "open" })
+pose("sleep0", { eyes: "closed", squash: 1 })
+pose("sleep1", { eyes: "closed", squash: 2 })
+pose("happy0", { eyes: "happy", blush: true })
+pose("happy1", { eyes: "happy", blush: true, squash: 1 })
+pose("pressL", { arms: { draw: [armL(11, 50), armR(9, 47)] }, props: [keyboard] })
+pose("pressR", { arms: { draw: [armL(9, 47), armR(11, 50)] }, props: [keyboard] })
+pose("scroll", { arms: { draw: [armL(13, 48), armR(13, 48)] }, after: [roll] })
+pose("hunt", { squash: 3, arms: { draw: [armL(5, 51, 3), armR(5, 51, 3)] } })
+pose("jumpCrouch", { eyes: "squeeze", squash: 3 })
+pose("jumpAir", { eyes: "happy", mouth: "o", blush: true, arms: { draw: [armL(2, 34), armR(2, 34)] } })
+pose("stretch0", { eyes: "closed", mouth: "o", arms: { draw: [armL(3, 33), armR(3, 33)] } })
+pose("stretch1", { eyes: "squeeze", mouth: "o", blush: true, tall: 3, arms: { draw: [armL(3, 32, -3), armR(3, 32, -3)] } })
+pose("drink0", { mouth: "o", arms: { remove: ["R"], draw: [armR(9, 40)] }, props: [], after: [mug(false), armR(8, 41)] })
+pose("drink1", { eyes: "closed", mouth: "o", blush: true, arms: { remove: ["R"], draw: [] }, after: [mug(true), armR(8, 38)] })
+pose("drag", { mouth: "o", arms: { draw: [armL(3, 33), armR(3, 33)] } })
+pose("think", { eyes: "lid", arms: { remove: ["R"], draw: [armR(13, 42)] } })
+pose("wave", { eyes: "happy", blush: true, arms: { remove: ["R"], draw: [armR(1, 36)] } })
+pose("peek")
 
-// Review sheet (not used by the app)
 const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL", "pressR", "scroll", "hunt",
   "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
-scene("review_a", { w: 44 * 6, h: 50 * 2, bg: "#f4f0e6" }, ...POSES.slice(0, 12).map((n, i) => stamp(n, (i % 6) * 44, Math.floor(i / 6) * 50)))
-scene("review_b", { w: 44 * 6, h: 50 * 2, bg: "#f4f0e6" }, ...POSES.slice(12).map((n, i) => stamp(n, (i % 6) * 44, Math.floor(i / 6) * 50)))
+scene("poses_a", { w: 44 * 7, h: 60 * 2, bg: "#e6ecec" }, ...POSES.slice(0, 14).map((n, i) => stamp(n, (i % 7) * 44 + 1, Math.floor(i / 7) * 60 + 1)))
+scene("poses_b", { w: 44 * 7, h: 60, bg: "#e6ecec" }, ...POSES.slice(14).map((n, i) => stamp(n, i * 44 + 1, 1)))
 
-// App icon: the idle pose centered on a 64x64 canvas (built at 4x = 256px for the .exe)
-scene("icon", { w: 64, h: 64 }, stamp("idle0", 11, 6),
-  rect(25, 23, 3, 3, "e"), px(25, 23, "w"), rect(37, 23, 3, 3, "e"), px(37, 23, "w"))
+// Pupils as in the reference (the app draws these live)
+sprite("idle_preview", { base: "idle" },
+  rect(14, 21, 3, 4, "e"), px(14, 21, "w"), rect(24, 21, 3, 4, "e"), px(24, 21, "w"))

@@ -7,7 +7,7 @@ const to = path.join(root, "src", "renderer", "pet", "sprites")
 fs.mkdirSync(to, { recursive: true })
 let n = 0
 for (const f of fs.readdirSync(from)) {
-  if (!f.endsWith(".png") || f.startsWith("_")) continue
+  if (!f.endsWith(".png") || f.startsWith("_") || f === "idle.png" || f === "idle_preview.png") continue
   fs.copyFileSync(path.join(from, f), path.join(to, f))
   n++
 }

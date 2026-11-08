@@ -5,10 +5,10 @@ const fs = require("fs")
 const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, dialog } = require("electron")
 const { createStore } = require("./store")
 const { createAgentWatcher } = require("./agents")
-const { PRESETS } = require("../shared/colors")
+const { PRESETS, sameAs } = require("../shared/colors")
 
-const SPRITE_W = 42
-const SPRITE_H = 48
+const SPRITE_W = 41
+const SPRITE_H = 58
 const MIN_SCALE = 2
 const MAX_SCALE = 6
 const DEFAULT_SCALE = 3
@@ -646,7 +646,7 @@ function openColorEditor() {
 }
 
 ipcMain.handle("colors-get", () => ({
-  colors: store.get("colors") || PRESETS[0],
+  colors: store.get("colors") && store.get("colors").skin ? store.get("colors") : PRESETS[0],
   presets: PRESETS,
   custom: store.get("customPresets") || [],
 }))
@@ -696,7 +696,7 @@ const every = (m) => (m === 0 ? "Off" : m < 60 ? `Every ${m} minutes` : m === 60
 function buildMenu() {
   const s = store.all()
   const peekEdge = s.peekEdge
-  const colorsNow = s.colors || PRESETS[0]
+  const colorsNow = s.colors && s.colors.skin ? s.colors : PRESETS[0]
   const allPresets = [...PRESETS, ...(s.customPresets || [])]
   const pomoLabel = pomo.running ? "Pause" : pomo.phase !== "idle" ? "Resume" : "Start"
   const pomoStatus = pomo.phase === "idle" ? "" : ` (${pomo.phase === "focus" ? "Focus" : "Break"}${pomo.running ? "" : ", paused"})`
@@ -807,8 +807,8 @@ function buildMenu() {
         ...allPresets.map((p) => ({
           label: p.name,
           type: "radio",
-          checked: colorsNow.skin === p.skin && colorsNow.fin === p.fin && colorsNow.belly === p.belly && colorsNow.lips === p.lips,
-          click: () => setSetting("colors", { name: p.name, skin: p.skin, fin: p.fin, belly: p.belly, lips: p.lips }),
+          checked: sameAs(colorsNow, p),
+          click: () => setSetting("colors", { name: p.name, skin: p.skin, fin: p.fin, lips: p.lips }),
         })),
         { type: "separator" },
         { label: "Color editor…", click: openColorEditor },
