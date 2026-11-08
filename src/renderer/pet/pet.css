@@ -79,6 +79,7 @@ body.dragging #name-badge { display: none !important; }
   white-space: pre-wrap;
   word-break: break-word;
   pointer-events: none;
+  z-index: 3;
   animation: pop-in 160ms steps(3) both;
 }
 #bubble::after {
@@ -102,7 +103,8 @@ body.dragging #name-badge { display: none !important; }
 #thought {
   position: absolute;
   top: calc(9 * var(--s));
-  left: calc(100% - 3 * var(--s));
+  left: calc(100% + 10px);
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -122,7 +124,7 @@ body.dragging #name-badge { display: none !important; }
 }
 #thought::before { width: 8px; height: 8px; left: -9px; bottom: -6px; }
 #thought::after { width: 4px; height: 4px; left: -15px; bottom: -12px; }
-body.thought-left #thought { left: auto; right: calc(100% - 3 * var(--s)); }
+body.thought-left #thought { left: auto; right: calc(100% + 10px); }
 body.thought-left #thought::before { left: auto; right: -9px; }
 body.thought-left #thought::after { left: auto; right: -15px; }
 #thought .dot { width: 6px; height: 6px; background: var(--ink); animation: dot 1.2s steps(2) infinite; }
