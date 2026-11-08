@@ -87,6 +87,7 @@ Windows SmartScreen warns about unsigned apps the first time. Choose **More info
 | Drag him | Stretches like mochi and wobbles; springs back when you let go |
 | Drag him past a screen edge | Peek mode: lies sideways and peeks in from the edge |
 | Click / double-click | Waves and blubs / jumps |
+| Nothing happening for a few seconds | Fidgets: glances around, blows bubbles, flutters his fins, sways, yawns, hops or stretches |
 | Leave the computer for 45 s | Falls asleep, Zzz |
 | A coding agent is working | "…" thought bubble beside his head |
 | The agent finishes | Jumps; the bubble turns into a light bulb |

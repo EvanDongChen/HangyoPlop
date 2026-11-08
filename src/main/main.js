@@ -1022,6 +1022,16 @@ if (process.env.HANGYO_TOUR) {
     }
     await corner("12-bottom-left", wa.x + 40, wa.y + wa.height - 22)
     await corner("13-top-right", wa.x + wa.width - 40, wa.y + 190)
+    // leave him alone and record the idle fidgets
+    if (process.env.HANGYO_TOUR_IDLE) {
+      await win.webContents.executeJavaScript("document.getElementById('rem-close').click()")
+      store.set("position", { cx: wa.x + wa.width / 2, bottom: wa.y + wa.height / 2 + 150 })
+      applyLayout({ mode: "normal" })
+      fs.mkdirSync(path.join(dir, "idle"), { recursive: true })
+      const until = Date.now() + Number(process.env.HANGYO_TOUR_IDLE) * 1000
+      let n = 0
+      while (Date.now() < until) { await shot(`idle/${String(n++).padStart(3, "0")}`); await wait(200) }
+    }
     // a frame sequence of Claude thinking then finishing, for the README
     if (process.env.HANGYO_TOUR_SEQ) {
       await win.webContents.executeJavaScript("document.getElementById('rem-close').click()")

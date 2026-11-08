@@ -7,10 +7,10 @@
   const SW = 41
   const SH = 58
   const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL0", "pressL1", "pressL2", "pressR0", "pressR1", "pressR2", "scroll", "hunt",
-    "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
+    "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek", "blub", "yawn", "finUp"]
   // Eye-center row for poses that have open eyes (pupils are drawn live). Columns are fixed.
   // Poses with open eyes, and how far each one moved the head down from idle0.
-  const EYE_SHIFT = { idle0: 0, idle1: 1, pressL0: 0, pressL1: 0, pressL2: 0, pressR0: 0, pressR1: 0, pressR2: 0, scroll: 0, hunt: 3, drink0: 0, drag: 0, think: 0, peek: 0 }
+  const EYE_SHIFT = { idle0: 0, idle1: 1, pressL0: 0, pressL1: 0, pressL2: 0, pressR0: 0, pressR1: 0, pressR2: 0, scroll: 0, hunt: 3, drink0: 0, drag: 0, think: 0, peek: 0, blub: 0, finUp: 0 }
   const EYE_CX = [13, 27] // eye-white centers (columns) in idle0
   const EYE_CY = 27 // eye-white center row in idle0
   const EYE_WHITE = [0xf4, 0xf8, 0xfa]
@@ -49,6 +49,9 @@
     focusUntil: 0,
     pointerDown: null,
     pomodoro: null,
+    fidget: null, // { kind, start, until }: a little idle animation
+    nextFidget: 0,
+    lastBusy: 0,
     reminders: [],
     transient: null, // { text, until }
     interactive: false,
@@ -203,6 +206,8 @@
     if (t < S.waveUntil) return Math.floor(t / 300) % 2 ? "wave" : "happy0"
     if (S.agent === "thinking") return t < S.blinkUntil ? "blink" : "think"
     if (isSleeping(t)) return Math.floor(t / 1400) % 2 ? "sleep1" : "sleep0"
+    const fp = fidgetPose(t)
+    if (fp) return fp
     if (t < S.wakeUntil) return "blink"
     if (t < S.blinkUntil) return "blink"
     return Math.floor(t / 750) % 2 ? "idle1" : "idle0"
@@ -254,6 +259,8 @@
     if (shift === undefined) return
     const cy = EYE_CY + shift
     let [ox, oy] = pupilOffset((EYE_CX[0] + EYE_CX[1]) / 2, cy)
+    const look = glanceAt(t)
+    if (look) [ox, oy] = look
     if (pose === "think") { oy = 2; if (S.agent === "thinking") ox = Math.floor(t / 1500) % 2 ? 2 : -2 }
     if (pose === "hunt") oy = Math.max(oy, 0)
     // a 3x4 pupil, painted only over eye-white pixels so it never spills past the eye
@@ -350,6 +357,9 @@
       sx = 1 / Math.sqrt(sy)
     }
     if (t < S.purr.until) sx *= 1 + Math.sin(t / 60) * 0.01
+    if (S.fidget && S.fidget.kind === "sway" && t < S.fidget.until && !S.drag && !S.jump) {
+      tx += (Math.floor((t - S.fidget.start) / 380) % 2 ? 1 : -1) * s // whole art pixels, stays crisp
+    }
     canvas.style.transform = `translate(${tx}px, ${ty}px) skewX(${skew}deg) scale(${sx}, ${sy})`
     canvas.style.transformOrigin = S.drag ? "50% 6%" : "50% 100%"
   }
@@ -361,6 +371,75 @@
     const goal = t < sc.until ? 5 : 0
     sc.paper += (goal - sc.paper) * Math.min(1, dt / 120)
     if (sc.paper < 0.2) sc.paper = 0
+  }
+
+  // ------------------------------------------------------------ idle fidgets
+  // When nothing has happened for a few seconds he does small things on his own.
+
+  const FIDGETS = [
+    ["glance", 3, 2200], ["bubbles", 2, 2600], ["fins", 2, 1300], ["sway", 2, 2300],
+    ["yawn", 1, 1500], ["hop", 1, 900], ["stretch", 1, 1700],
+  ]
+
+  // Anything the person does (typing, scrolling, dragging, a message) stops the fidget and
+  // pushes the next one back.
+  function busy() {
+    S.lastBusy = now()
+    S.fidget = null
+    body.classList.remove("bubbling")
+  }
+
+  function canFidget(t) {
+    return S.layout.mode === "normal" && !S.drag && !S.jump && !S.activity && S.agent === "idle" &&
+      !isSleeping(t) && t >= S.purr.until && t >= S.press.until && t >= S.scroll.until && t >= S.waveUntil &&
+      t >= S.focusUntil && t >= S.hunt.until && t - S.lastBusy > 6000 && !S.transient
+  }
+
+  function stepFidget(t) {
+    if (S.fidget && t >= S.fidget.until) {
+      S.fidget = null
+      body.classList.remove("bubbling")
+    }
+    if (S.fidget) {
+      if (!canFidget(t) && S.fidget.kind !== "hop") { S.fidget = null; body.classList.remove("bubbling") }
+      return
+    }
+    if (!S.nextFidget) S.nextFidget = t + 6000 + Math.random() * 4000
+    if (t < S.nextFidget) return
+    if (!canFidget(t)) { S.nextFidget = t + 2500; return }
+    const total = FIDGETS.reduce((n, f) => n + f[1], 0)
+    let r = Math.random() * total
+    let pick = FIDGETS[0]
+    for (const f of FIDGETS) { if ((r -= f[1]) < 0) { pick = f; break } }
+    if (S.lastFidget === pick[0]) pick = FIDGETS[(FIDGETS.indexOf(pick) + 1) % FIDGETS.length]
+    S.lastFidget = pick[0]
+    S.fidget = { kind: pick[0], start: t, until: t + pick[2] }
+    if (pick[0] === "hop") S.jump = { start: t, hops: 1 }
+    if (pick[0] === "bubbles") {
+      body.classList.remove("bubbling")
+      void body.offsetWidth
+      body.classList.add("bubbling")
+    }
+    S.nextFidget = t + pick[2] + 6000 + Math.random() * 8000
+  }
+
+  function fidgetPose(t) {
+    const f = S.fidget
+    if (!f || t >= f.until) return null
+    const e = t - f.start
+    if (f.kind === "bubbles") return "blub"
+    if (f.kind === "yawn") return e < 1000 ? "yawn" : e < 1150 ? "blink" : "idle0"
+    if (f.kind === "fins") return Math.floor(e / 130) % 2 ? "finUp" : "idle0"
+    if (f.kind === "stretch") return e < 1300 ? "stretch0" : "idle1"
+    return null // glance, sway and hop use the normal idle frames
+  }
+
+  // During a glance the eyes look left, right, then up, whatever the cursor is doing.
+  function glanceAt(t) {
+    const f = S.fidget
+    if (!f || f.kind !== "glance" || t >= f.until) return null
+    const e = t - f.start
+    return e < 650 ? [-3, 0] : e < 1300 ? [3, 0] : e < 1800 ? [0, -2] : [0, 0]
   }
 
   // ------------------------------------------------------------ main loop
@@ -376,6 +455,7 @@
       if (Math.random() < 0.2) S.blinkAt = t + 320 // occasional double blink
     }
     stepScroll(t, dt)
+    stepFidget(t)
     updateTransform(t, dt)
     draw(t)
     updateBubble(t)
@@ -598,11 +678,13 @@
     Sound.stopPurr()
     S.purr.until = 0
     markActive()
+    busy()
     api.dragStart(pd.cx, pd.cy)
   }
 
   let lastClick = 0
   function onClickPet() {
+    busy()
     markActive()
     if (S.activity) { window.pet.dismissActivity && window.pet.dismissActivity(); return }
     if (S.layout.mode === "peek") { api.exitPeek(); return }
@@ -623,6 +705,7 @@
   }
 
   function onSay({ text, ms, mood }) {
+    busy()
     markActive()
     say(text, ms)
     if (mood === "wave") { S.waveUntil = now() + 2200; Sound.alert() }
@@ -632,6 +715,7 @@
   }
 
   function onJump({ mood } = {}) {
+    busy()
     if (mood === "wave") { S.waveUntil = now() + 1600; Sound.blub(); return }
     if (mood === "focus") { S.focusUntil = now() + 1400; return }
     startJump(mood === "complete" ? 2 : 1)
@@ -904,6 +988,7 @@
   api.onKey(({ side }) => {
     const t = now()
     markActive()
+    busy()
     // hit a random key with the paw on that side, never the same key twice in a row
     let n = Math.floor(Math.random() * 3)
     if (S.press.side === side && n === S.press.n) n = (n + 1 + Math.floor(Math.random() * 2)) % 3
@@ -912,6 +997,7 @@
   api.onWheel(() => {
     const t = now()
     markActive()
+    busy()
     S.scroll.until = t + 360
     S.scroll.offset += 1
   })
@@ -927,6 +1013,7 @@
     Sound.pop()
   })
   api.onActivity(({ kind, phase }) => {
+    busy()
     if (phase === "start") S.activity = { kind, start: now() }
     else S.activity = null
     markActive()
@@ -934,6 +1021,7 @@
   api.onSay(onSay)
   api.onJump(onJump)
   api.onAgent(({ state }) => {
+    busy()
     if (state === "done") {
       S.agent = "idle"
       S.doneUntil = now() + 3200

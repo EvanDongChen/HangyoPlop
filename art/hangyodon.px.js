@@ -142,6 +142,24 @@ function mouthO(rows, dy = 0) {
   for (let x = 17; x <= 23; x++) put(rows, x, Y(32), "P")
 }
 
+// Yawn: a big open mouth with a little tongue.
+function mouthYawn(rows, dy = 0) {
+  const Y = (y) => y + OFF + dy
+  for (const y of [31, 32, 33]) for (let x = 7; x <= 33; x++) if (rows[Y(y)][x] === "P") put(rows, x, Y(y), "p")
+  for (let x = 17; x <= 23; x++) put(rows, x, Y(31), "P")
+  for (let x = 16; x <= 24; x++) { put(rows, x, Y(32), "P"); put(rows, x, Y(33), "P") }
+  for (let x = 18; x <= 22; x++) put(rows, x, Y(33), "q")
+  for (let x = 17; x <= 23; x++) put(rows, x, Y(34), "P")
+}
+
+// Raise both side fins one row (called twice for the flutter frame).
+function finsUp(rows, dy = 0) {
+  for (const side of ["L", "R"]) {
+    const X = (x) => (side === "L" ? x : mx(x))
+    for (let y = 16 + OFF + dy; y <= 30 + OFF + dy; y++) for (let x = 0; x <= 4; x++) put(rows, X(x), y, rows[y + 1][X(x)])
+  }
+}
+
 function blush(rows, dy = 0) {
   for (const x of [8, 9, 31, 32]) put(rows, x, 28 + OFF + dy, "n")
 }
@@ -226,7 +244,7 @@ const TYPING_BASE = (() => { const r = BASE.slice(); noArm(r, "L"); noArm(r, "R"
 // Poses hand-drawn in the Hangyodon Pixel Editor replace the generated version (full 41x58 rows).
 const OVERRIDES = {}
 
-function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 0, arms = {}, props = [], after = [] } = {}) {
+function pose(name, { eyes: e = "open", mouth, fins, blush: b, squash: sq = 0, tall = 0, arms = {}, props = [], after = [] } = {}) {
   if (OVERRIDES[name]) { sprite(name, { w: W, h: PH }, toGrid(OVERRIDES[name])); return }
   let rows = BASE.slice()
   if (sq) rows = squash(rows, sq)
@@ -234,6 +252,8 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
   const dy = sq - tall
   eyes(rows, e, dy)
   if (mouth === "o") mouthO(rows, dy)
+  if (mouth === "yawn") mouthYawn(rows, dy)
+  if (fins === "up") { finsUp(rows, dy); finsUp(rows, dy) }
   if (b) blush(rows, dy)
   // a lowered arm rests on top of props like the keyboard, so it is painted again last
   const onTop = []
@@ -345,6 +365,10 @@ pose("drag", { mouth: "o", arms: { L: "up", R: "up" } })
 pose("think", { eyes: "lid" })
 pose("wave", { eyes: "happy", blush: true, arms: { R: "up" } })
 pose("peek")
+// idle fidgets
+pose("blub", { mouth: "o" })
+pose("yawn", { eyes: "squeeze", mouth: "yawn", squash: 1 })
+pose("finUp", { fins: "up" })
 
 const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL0", "pressR0", "scroll", "hunt",
   "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
