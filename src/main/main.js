@@ -306,6 +306,7 @@ ipcMain.on("exit-peek", () => {
 
 // ---------------------------------------------------------------- cursor + global input
 
+let inputHookOk = false
 let lastCursor = { x: -1, y: -1 }
 function pollCursor() {
   if (!win || win.isDestroyed()) return
@@ -341,6 +342,7 @@ function startInputHooks() {
     console.warn("[input] could not start hooks:", err.message)
     return null
   }
+  inputHookOk = true
   return hook
 }
 
@@ -863,8 +865,7 @@ function buildMenu() {
 }
 
 function iconImage() {
-  const img = nativeImage.createFromPath(path.join(__dirname, "..", "renderer", "pet", "sprites", "idle0.png"))
-  return img.isEmpty() ? img : img.resize({ width: 32, height: 32, quality: "good" })
+  return nativeImage.createFromPath(path.join(__dirname, "..", "renderer", "pet", "tray.png"))
 }
 
 function rebuildTrayMenu() {
@@ -927,6 +928,7 @@ if (process.env.HANGYO_TOUR) {
   }
   ipcMain.once("ready", async () => {
     fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(path.join(dir, "status.json"), JSON.stringify({ inputHookOk, packaged: app.isPackaged }))
     await wait(1500)
     await shot("01-idle")
     say("Hi! I'm Hangyodon. Blub!", 3000, "wave")

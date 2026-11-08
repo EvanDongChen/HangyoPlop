@@ -222,3 +222,7 @@ const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1"
   "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
 scene("review_a", { w: 44 * 6, h: 50 * 2, bg: "#f4f0e6" }, ...POSES.slice(0, 12).map((n, i) => stamp(n, (i % 6) * 44, Math.floor(i / 6) * 50)))
 scene("review_b", { w: 44 * 6, h: 50 * 2, bg: "#f4f0e6" }, ...POSES.slice(12).map((n, i) => stamp(n, (i % 6) * 44, Math.floor(i / 6) * 50)))
+
+// App icon: the idle pose centered on a 64x64 canvas (built at 4x = 256px for the .exe)
+scene("icon", { w: 64, h: 64 }, stamp("idle0", 11, 6),
+  rect(25, 23, 3, 3, "e"), px(25, 23, "w"), rect(37, 23, 3, 3, "e"), px(37, 23, "w"))
