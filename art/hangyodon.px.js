@@ -156,6 +156,21 @@ function noArm(rows, side, dy = 0) {
   }
 }
 
+// Any colored pixel that touches transparency becomes outline, so moved parts never leave gaps.
+function closeOutline(rows) {
+  const out = rows.slice()
+  for (let y = 0; y < rows.length; y++) for (let x = 0; x < W; x++) {
+    const c = rows[y][x]
+    if (c === "." || c === "k") continue
+    const open = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+      const X = x + dx, Y = y + dy
+      return X < 0 || Y < 0 || X >= W || Y >= rows.length || rows[Y][X] === "."
+    })
+    if (open) out[y] = out[y].slice(0, x) + "k" + out[y].slice(x + 1)
+  }
+  return out
+}
+
 const toGrid = (rows) => {
   const first = rows.findIndex((r) => r !== BLANK)
   return grid(0, first, rows.slice(first).join("\n"))
@@ -179,7 +194,15 @@ function stub(rows, side, mode, dy = 0) {
   if (mode === "up" || mode === "upHigh") {
     // flip, and swap the rim light and the underside shade so the lighting still comes from above
     out = block.slice().reverse().map((r) => r.replace(/[lT]/g, (c) => (c === "l" ? "T" : "l")))
-    if (mode === "upHigh") at = y0 - 2
+    if (mode === "upHigh") {
+      at = y0 - 2
+      // the lifted arm's top edge sits right under the neck: turn the shoulder pixels left
+      // stranded above it into outline so nothing pokes out
+      for (const y of [y0 - 4, y0 - 3]) for (let x = 0; x <= 8; x++) {
+        const c = rows[y][X(x)]
+        if (c !== "." && c !== "k") put(rows, X(x), y, "k")
+      }
+    }
   }
   if (mode === "down") at = y0 + 3
   const pixels = []
@@ -204,6 +227,8 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
     const px = stub(rows, side, mode, dy)
     if (mode === "down") onTop.push(...px)
   }
+  rows = closeOutline(rows)
+  for (const p of onTop) p[2] = rows[p[1]][p[0]]
   sprite(name, { w: W, h: PH }, ...props, toGrid(rows), ...after, (c) => { for (const [x, y, ch] of onTop) c.px(x, y, ch) })
 }
 
