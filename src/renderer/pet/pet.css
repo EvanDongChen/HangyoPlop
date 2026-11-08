@@ -1,0 +1,319 @@
+:root {
+  --ink: #1b2338;
+  --paper: #fffdf6;
+  --sea: #86cfe0;
+  --sea-dark: #3d80b9;
+  --accent: #e9516c;
+  --s: 3px; /* one art pixel, set from JS */
+  --font: "Consolas", "Lucida Console", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font: 700 12px/1.25 var(--font);
+  color: var(--ink);
+  -webkit-font-smoothing: none;
+}
+
+.hidden { display: none !important; }
+
+/* ------------------------------------------------------------ pet */
+
+#pet-box {
+  position: absolute;
+  width: calc(41 * var(--s));
+  height: calc(58 * var(--s));
+}
+
+#pet {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  transform-origin: 50% 8%;
+  will-change: transform;
+}
+
+body.dragging #pet { cursor: grabbing; }
+body.over-pet #pet { cursor: grab; }
+
+#name-badge {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, -2px);
+  padding: 1px 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--ink);
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 -2px 0 #fff, 0 2px 0 #fff, -2px 0 0 #fff, 2px 0 0 #fff;
+  pointer-events: none;
+  display: none;
+}
+body[data-show-name="1"][data-mode="normal"] #name-badge { display: block; }
+body.dragging #name-badge { display: none !important; }
+#pet-box { margin-bottom: 0; }
+
+/* ------------------------------------------------------------ speech bubble */
+
+#bubble {
+  position: absolute;
+  bottom: calc(100% - 5 * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 9px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 rgba(27, 35, 56, 0.25);
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+  pointer-events: none;
+  z-index: 3;
+  animation: pop-in 160ms steps(3) both;
+}
+#bubble::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 5px + var(--tail, 0px));
+  bottom: -8px;
+  width: 8px;
+  height: 6px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-top: 0;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+#bubble.fixed { background: #eaf7fb; }
+/* no room above the head: show the bubble under the pet, tail pointing up */
+#bubble.below { bottom: auto; top: calc(100% + 20px); }
+#bubble.below::after { bottom: auto; top: -8px; transform: rotate(180deg); }
+/* Thought bubble beside the head: "..." while Claude works, a light bulb when it's done.
+   It sits on whichever side of the pet has more room (body.thought-left flips it). */
+#thought {
+  position: absolute;
+  top: calc(9 * var(--s));
+  left: calc(100% + 10px);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 rgba(27, 35, 56, 0.25);
+  pointer-events: none;
+  animation: thought-in 180ms steps(3) both;
+}
+/* tail: two little bubbles leading back to the head */
+#thought::before, #thought::after {
+  content: "";
+  position: absolute;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+}
+#thought::before { width: 8px; height: 8px; left: -9px; bottom: -6px; }
+#thought::after { width: 4px; height: 4px; left: -15px; bottom: -12px; }
+body.thought-left #thought { left: auto; right: calc(100% + 10px); }
+body.thought-left #thought::before { left: auto; right: -9px; }
+body.thought-left #thought::after { left: auto; right: -15px; }
+#thought .dot { width: 6px; height: 6px; background: var(--ink); animation: dot 1.2s steps(2) infinite; }
+#thought .dot:nth-child(2) { animation-delay: 0.2s; }
+#thought .dot:nth-child(3) { animation-delay: 0.4s; }
+#thought.bulb { padding: 4px 8px; background: #fffbe6; }
+#thought.bulb svg { display: block; animation: glow 0.5s steps(2) 3; }
+@keyframes dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes glow { 50% { filter: drop-shadow(0 0 4px #ffd23f); } }
+@keyframes thought-in { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+body[data-mode="peek"] #thought, body[data-mode="big"] #thought { display: none; }
+body[data-mode="peek"] #bubble { display: none; }
+
+@keyframes pop-in {
+  from { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ------------------------------------------------------------ effects */
+
+#hearts, #zzz { position: absolute; pointer-events: none; display: none; }
+
+#hearts { left: 0; right: 0; top: -4%; height: 30%; }
+body.purring #hearts { display: block; }
+#hearts span {
+  position: absolute;
+  width: calc(var(--s) * 5);
+  height: calc(var(--s) * 5);
+  background: var(--accent);
+  clip-path: polygon(0 20%, 20% 0, 40% 0, 50% 20%, 60% 0, 80% 0, 100% 20%, 100% 50%, 50% 100%, 0 50%);
+  animation: rise 1.4s steps(7) infinite;
+  opacity: 0;
+}
+#hearts span:nth-child(1) { left: 22%; animation-delay: 0s; }
+#hearts span:nth-child(2) { left: 48%; animation-delay: 0.45s; }
+#hearts span:nth-child(3) { left: 70%; animation-delay: 0.9s; }
+@keyframes rise {
+  0% { transform: translateY(10px); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-34px); opacity: 0; }
+}
+
+#zzz { right: 2%; top: 0; width: 30%; height: 30%; }
+body.sleeping #zzz { display: block; }
+#zzz span {
+  position: absolute;
+  font-size: calc(var(--s) * 4);
+  color: var(--sea-dark);
+  animation: rise 2.4s steps(8) infinite;
+  opacity: 0;
+}
+#zzz span:nth-child(1) { left: 0; }
+#zzz span:nth-child(2) { left: 35%; animation-delay: 0.8s; font-size: calc(var(--s) * 3); }
+#zzz span:nth-child(3) { left: 65%; animation-delay: 1.6s; font-size: calc(var(--s) * 2.5); }
+
+body[data-mode="peek"] #hearts, body[data-mode="peek"] #zzz { display: none; }
+
+/* ------------------------------------------------------------ pomodoro chip */
+
+#pomo {
+  position: absolute;
+  left: calc(100% - 2 * var(--s));
+  top: 18%;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  white-space: nowrap;
+}
+body.pomodoro #pomo { display: flex; }
+body.pomo-left #pomo { left: auto; right: calc(100% - 2 * var(--s)); }
+body[data-mode="peek"] #pomo, body[data-mode="big"] #pomo { display: none !important; }
+#pomo.rest { background: #e7f8ee; }
+#pomo.paused #pomo-time { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
+#pomo-icon {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  box-shadow: 2px -2px 0 -1px #3f9e78;
+}
+#pomo.rest #pomo-icon { background: #7fc8ff; box-shadow: none; }
+#pomo button {
+  display: none;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 10px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+#pomo:hover button { display: inline-block; }
+
+/* ------------------------------------------------------------ clock button */
+
+#clock-btn {
+  position: absolute;
+  right: calc(100% - 6 * var(--s));
+  bottom: 10%;
+  width: 26px;
+  height: 26px;
+  padding: 3px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  display: none;
+}
+#clock-btn svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+body.hover #clock-btn, body[data-clock="1"] #clock-btn { display: block; }
+body.clock-right #clock-btn { right: auto; left: calc(100% - 6 * var(--s)); }
+body[data-mode="peek"] #clock-btn, body[data-mode="big"] #clock-btn, body.dragging #clock-btn { display: none !important; }
+
+/* ------------------------------------------------------------ panels */
+
+.panel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(27, 35, 56, 0.3);
+  padding: 8px;
+}
+
+button, input { font: inherit; color: var(--ink); }
+.panel button {
+  border: 2px solid var(--ink);
+  background: #fff;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+.panel button:hover { background: #eaf7fb; }
+.panel button[type="submit"], .panel button.on { background: var(--ink); color: var(--paper); }
+.panel input[type="text"], .panel input[type="number"], .panel input[type="time"] {
+  border: 2px solid var(--ink);
+  background: #fff;
+  padding: 2px 5px;
+  min-width: 0;
+  outline: none;
+}
+.panel input:focus { background: #fffbe8; }
+.row { display: flex; align-items: center; gap: 5px; margin-top: 6px; }
+.row.end { justify-content: flex-end; }
+
+#prompt { width: 270px; }
+#prompt-title { margin-bottom: 2px; }
+#prompt-input { flex: 1; }
+
+#reminders { width: 300px; max-height: calc(100% - 8px); overflow: auto; }
+#reminders header { display: flex; justify-content: space-between; align-items: center; }
+#rem-form { border-top: 2px dashed var(--ink); margin-top: 6px; padding-top: 2px; }
+#rem-msg { flex: 1; }
+.seg { display: inline-flex; }
+.seg button + button { border-left: 0; }
+.days { display: flex; flex-wrap: wrap; gap: 2px; }
+.days label { display: inline-flex; align-items: center; gap: 1px; font-size: 11px; cursor: pointer; }
+.days input { margin: 0; }
+#rem-days { flex-direction: column; align-items: flex-start; }
+.quick button { font-size: 10px; padding: 0 4px; }
+#rem-list { margin-top: 6px; }
+.rem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 2px 8px;
+  align-items: center;
+  padding: 5px 0;
+  border-top: 1px solid rgba(27, 35, 56, 0.2);
+}
+.rem.off { opacity: 0.45; }
+.rem .t { font-size: 15px; }
+.rem .m { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rem .d { grid-column: 2; font-size: 10px; font-weight: 400; }
+.rem .acts { grid-row: span 2; display: flex; flex-direction: column; gap: 2px; }
+.rem .acts button { font-size: 10px; padding: 0 4px; }
+.rem-empty { font-weight: 400; padding: 6px 0; }
+
+#rec {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 2px 6px;
+  background: var(--accent);
+  color: #fff;
+  border: 2px solid var(--ink);
+  animation: blink 1s steps(1) infinite;
+}
+
+body[data-mode="big"] .panel, body[data-mode="peek"] .panel { display: none !important; }

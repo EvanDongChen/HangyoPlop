@@ -1,0 +1,8 @@
+node_modules/
+dist/
+art/out/
+comnyang/
+art/ref/*.npy
+art/ref/*.cells.png
+art/ref/raw.txt
+art/ref/clean.json
