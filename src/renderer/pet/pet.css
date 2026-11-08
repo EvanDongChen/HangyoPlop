@@ -97,12 +97,43 @@ body.dragging #name-badge { display: none !important; }
 /* no room above the head: show the bubble under the pet, tail pointing up */
 #bubble.below { bottom: auto; top: calc(100% + 20px); }
 #bubble.below::after { bottom: auto; top: -8px; transform: rotate(180deg); }
-/* Claude is thinking: three pixel dots blinking in turn */
-#bubble.think { display: flex; gap: 5px; padding: 8px 10px; }
-#bubble.think .dot { width: 6px; height: 6px; background: var(--ink); animation: dot 1.2s steps(2) infinite; }
-#bubble.think .dot:nth-child(2) { animation-delay: 0.2s; }
-#bubble.think .dot:nth-child(3) { animation-delay: 0.4s; }
+/* Thought bubble beside the head: "..." while Claude works, a light bulb when it's done.
+   It sits on whichever side of the pet has more room (body.thought-left flips it). */
+#thought {
+  position: absolute;
+  top: calc(9 * var(--s));
+  left: calc(100% - 3 * var(--s));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 rgba(27, 35, 56, 0.25);
+  pointer-events: none;
+  animation: thought-in 180ms steps(3) both;
+}
+/* tail: two little bubbles leading back to the head */
+#thought::before, #thought::after {
+  content: "";
+  position: absolute;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+}
+#thought::before { width: 8px; height: 8px; left: -9px; bottom: -6px; }
+#thought::after { width: 4px; height: 4px; left: -15px; bottom: -12px; }
+body.thought-left #thought { left: auto; right: calc(100% - 3 * var(--s)); }
+body.thought-left #thought::before { left: auto; right: -9px; }
+body.thought-left #thought::after { left: auto; right: -15px; }
+#thought .dot { width: 6px; height: 6px; background: var(--ink); animation: dot 1.2s steps(2) infinite; }
+#thought .dot:nth-child(2) { animation-delay: 0.2s; }
+#thought .dot:nth-child(3) { animation-delay: 0.4s; }
+#thought.bulb { padding: 4px 8px; background: #fffbe6; }
+#thought.bulb svg { display: block; animation: glow 0.5s steps(2) 3; }
 @keyframes dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes glow { 50% { filter: drop-shadow(0 0 4px #ffd23f); } }
+@keyframes thought-in { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+body[data-mode="peek"] #thought, body[data-mode="big"] #thought { display: none; }
 body[data-mode="peek"] #bubble { display: none; }
 
 @keyframes pop-in {

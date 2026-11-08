@@ -158,6 +158,7 @@
       }
     }
     body.classList.toggle("pomo-left", W - (box.offsetLeft + petW) < 90)
+    body.classList.toggle("thought-left", box.offsetLeft > W - (box.offsetLeft + petW))
     body.classList.toggle("clock-right", box.offsetLeft < 34)
   }
 
@@ -394,9 +395,8 @@
     const t = now()
     let text = ""
     let fixed = false
-    let thinking = false
+    const thinking = false
     if (S.transient && t < S.transient.until) text = S.transient.text
-    else if (S.agent === "thinking" && S.layout.mode === "normal") thinking = true
     else if (S.settings.fixedMessage && S.layout.mode === "normal") { text = S.settings.fixedMessage; fixed = true }
     const key = `${fixed}:${thinking}:${text}`
     if (key === shownText) return
@@ -413,9 +413,40 @@
     fitBubble()
   }
 
+  // Thought bubble beside the head: "..." while Claude works, a light bulb when it's done.
+  const thoughtEl = $("thought")
+  const BULB = `<svg viewBox="0 0 12 14" width="30" height="35" shape-rendering="crispEdges" aria-label="done">
+    <rect x="3" y="0" width="6" height="1" fill="#0d2236"/><rect x="2" y="1" width="1" height="1" fill="#0d2236"/><rect x="9" y="1" width="1" height="1" fill="#0d2236"/>
+    <rect x="1" y="2" width="1" height="5" fill="#0d2236"/><rect x="10" y="2" width="1" height="5" fill="#0d2236"/>
+    <rect x="3" y="1" width="6" height="1" fill="#ffe680"/><rect x="2" y="2" width="8" height="5" fill="#ffd23f"/>
+    <rect x="3" y="2" width="2" height="2" fill="#fff6c8"/>
+    <rect x="2" y="7" width="1" height="1" fill="#0d2236"/><rect x="9" y="7" width="1" height="1" fill="#0d2236"/>
+    <rect x="3" y="7" width="6" height="2" fill="#ffd23f"/><rect x="3" y="9" width="1" height="1" fill="#0d2236"/><rect x="8" y="9" width="1" height="1" fill="#0d2236"/>
+    <rect x="4" y="9" width="4" height="1" fill="#e0a800"/>
+    <rect x="3" y="10" width="6" height="3" fill="#8b95a8"/><rect x="3" y="11" width="6" height="1" fill="#5d6678"/>
+    <rect x="2" y="10" width="1" height="3" fill="#0d2236"/><rect x="9" y="10" width="1" height="3" fill="#0d2236"/>
+    <rect x="4" y="13" width="4" height="1" fill="#0d2236"/>
+  </svg>`
+  let thoughtShown = ""
+  function renderThought(t) {
+    let mode = ""
+    if (t < (S.doneUntil || 0)) mode = "bulb"
+    else if (S.agent === "thinking") mode = "dots"
+    if (S.layout.mode !== "normal" || S.drag) mode = ""
+    if (mode === thoughtShown) return
+    thoughtShown = mode
+    thoughtEl.classList.toggle("hidden", !mode)
+    thoughtEl.classList.toggle("bulb", mode === "bulb")
+    thoughtEl.innerHTML = mode === "dots" ? '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' : mode === "bulb" ? BULB : ""
+    thoughtEl.style.animation = "none"
+    void thoughtEl.offsetWidth
+    thoughtEl.style.animation = ""
+  }
+
   function updateBubble(t) {
     if (S.transient && t >= S.transient.until) S.transient = null
     renderBubble()
+    renderThought(t)
   }
 
   // ------------------------------------------------------------ hit testing + mouse passthrough
@@ -902,7 +933,14 @@
   })
   api.onSay(onSay)
   api.onJump(onJump)
-  api.onAgent(({ state }) => { S.agent = state; markActive() })
+  api.onAgent(({ state }) => {
+    if (state === "done") {
+      S.agent = "idle"
+      S.doneUntil = now() + 3200
+      Sound.alert()
+    } else S.agent = state
+    markActive()
+  })
   api.onPomodoro(onPomodoro)
   api.onPrompt(openPrompt)
   api.onOpenReminders(openReminders)

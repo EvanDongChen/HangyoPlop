@@ -551,7 +551,13 @@ let agentState = "idle"
 function onAgentState({ session, state }) {
   if (state === "complete") {
     sessions.delete(session)
-    notice("Task complete! Blub blub!", { ms: 4000, mood: "complete" })
+    // jump, and the thinking bubble turns into a light bulb
+    if (popOutForNotice(4000)) {
+      setTimeout(() => {
+        send("agent", { state: "done" })
+        send("jump", { mood: "complete" })
+      }, layout.mode === "normal" ? 0 : 200)
+    }
   } else if (state === "notification") {
     sessions.set(session, { state: "waiting", at: Date.now() })
     notice(`${userName()}, needs your attention!`, { ms: 6000, mood: "wave" })
@@ -1000,7 +1006,10 @@ if (process.env.HANGYO_TOUR) {
       say("", 1, "")
       await wait(400)
       await shot(`${name}-think`)
-      onAgentState({ session: "tour", state: "idle" })
+      onAgentState({ session: "tour", state: "complete" })
+      await wait(500)
+      await shot(`${name}-done`)
+      await wait(2000)
       send("open-reminders")
       await wait(300)
       await shot(`${name}-reminders`)
