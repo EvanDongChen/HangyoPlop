@@ -47,10 +47,7 @@
     }
   }
 
-  // Overheated look: skin and fins glow red.
-  const HOT = { t: "#ff6b5a", T: "#d63c3c", l: "#ffb0a0", f: "#c8283a", F: "#a01e2e", D: "#76131f", h: "#ff8a8a" }
-
-  const api = { CLASSIC, PRESETS, HOT, fullPalette, sameAs, hexToRgb, rgbToHex, mix }
+  const api = { CLASSIC, PRESETS, fullPalette, sameAs, hexToRgb, rgbToHex, mix }
   if (typeof module !== "undefined" && module.exports) module.exports = api
   else root.HangyoColors = api
 })(typeof window !== "undefined" ? window : globalThis)

@@ -1,5 +1,5 @@
 // Pet renderer: picks a pose every frame, draws it on a 42x44 canvas (with live pupils,
-// overheat tint and the scroll paper), and runs the in-window UI (bubble, panels, prompts).
+// and the scroll paper), and runs the in-window UI (bubble, panels, prompts).
 ;(() => {
   const api = window.pet
   const C = window.HangyoColors
@@ -37,8 +37,6 @@
     blinkAt: now() + 2500,
     blinkUntil: 0,
     press: { side: "L", n: 0, until: 0 },
-    keyTimes: [],
-    heat: 0,
     scroll: { until: 0, paper: 0, offset: 0 },
     drag: null, // { vx, vy, stretch, wobble, wobbleV }
     dragRelease: null,
@@ -61,7 +59,6 @@
 
   const base = {}
   let normalSet = {}
-  let hotSet = {}
 
   function loadImages() {
     return Promise.all(POSES.map((name) => new Promise((resolve) => {
@@ -104,7 +101,6 @@
   function rebuildSprites() {
     const palette = C.fullPalette(S.settings.colors)
     normalSet = recolorSet(palette)
-    hotSet = recolorSet({ ...palette, ...C.HOT })
   }
 
   // ------------------------------------------------------------ layout
@@ -258,11 +254,6 @@
     ctx.clearRect(0, 0, SW, SH)
     const img = normalSet[pose]
     if (img) ctx.drawImage(img, 0, 0)
-    if (S.heat > 0.03 && hotSet[pose]) {
-      ctx.globalAlpha = clamp(S.heat, 0, 1) * 0.9
-      ctx.drawImage(hotSet[pose], 0, 0)
-      ctx.globalAlpha = 1
-    }
     drawPupils(pose, t)
     if (pose === "scroll") drawPaper(t)
     frameData = ctx.getImageData(0, 0, SW, SH).data
@@ -271,7 +262,6 @@
     body.classList.toggle("thinking", S.agent === "thinking" && pose === "think")
     body.classList.toggle("purring", t < S.purr.until)
     body.classList.toggle("sleeping", pose === "sleep0" || pose === "sleep1")
-    body.classList.toggle("overheated", S.heat > 0.6)
   }
 
   // ------------------------------------------------------------ motion (transforms)
@@ -325,18 +315,7 @@
     canvas.style.transformOrigin = S.drag ? "50% 6%" : "50% 100%"
   }
 
-  // ------------------------------------------------------------ heat + scroll easing
-
-  let lastHeatStep = 0
-  function stepHeat(t) {
-    if (t - lastHeatStep < 66) return
-    lastHeatStep = t
-    S.keyTimes = S.keyTimes.filter((k) => t - k < 1500)
-    const kps = S.keyTimes.length / 1.5
-    const target = Math.pow(clamp((kps - 4) / 10, 0, 1), 1.5)
-    S.heat += (target - S.heat) * (target > S.heat ? 0.1 : 0.05)
-    if (S.heat < 0.01) S.heat = 0
-  }
+  // ------------------------------------------------------------ scroll easing
 
   function stepScroll(t, dt) {
     const sc = S.scroll
@@ -357,7 +336,6 @@
       S.blinkAt = t + 2500 + Math.random() * 3500
       if (Math.random() < 0.2) S.blinkAt = t + 320 // occasional double blink
     }
-    stepHeat(t)
     stepScroll(t, dt)
     updateTransform(t, dt)
     draw(t)
@@ -852,7 +830,6 @@
   api.onKey(({ side }) => {
     const t = now()
     markActive()
-    S.keyTimes.push(t)
     // hit a random key with the paw on that side, never the same key twice in a row
     let n = Math.floor(Math.random() * 3)
     if (S.press.side === side && n === S.press.n) n = (n + 1 + Math.floor(Math.random() * 2)) % 3

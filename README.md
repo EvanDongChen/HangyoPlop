@@ -24,7 +24,6 @@ Right-click Hangyodon or the tray icon to open the menu.
 | Stroke the head with the cursor | Purrs (happy face, hearts, bubbly gurgle) |
 | Shake the cursor fast nearby | Hunting pose, wiggles toward it |
 | Typing | Kneads a little keyboard with the paw on that side of the keyboard |
-| Typing very fast | Overheats: turns red and steams |
 | Mouse wheel | Unrolls a paper scroll |
 | Drag | Stretches like mochi, wobbles when shaken, springs back on release |
 | Drag past a screen edge | Peek mode: lies sideways and peeks in from the edge |
@@ -73,7 +72,7 @@ npm run art
 - [src/main/main.js](src/main/main.js): window layouts (normal, peek, big), drag, global input, breaks, reminders, pomodoro, menus
 - [src/main/agents.js](src/main/agents.js): agent log tailing and the localhost hook server
 - [src/main/store.js](src/main/store.js): JSON settings
-- [src/renderer/pet/pet.js](src/renderer/pet/pet.js): pose state machine, canvas drawing, petting, hunting, heat, bubble, reminders panel, recording
+- [src/renderer/pet/pet.js](src/renderer/pet/pet.js): pose state machine, canvas drawing, petting, hunting, bubble, reminders panel, recording
 - [src/renderer/pet/sound.js](src/renderer/pet/sound.js): synthesized sounds (no audio files)
 - [src/renderer/colors/](src/renderer/colors/): color editor window
 - [src/shared/colors.js](src/shared/colors.js): palettes and presets
