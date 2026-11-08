@@ -254,32 +254,41 @@ const keyboard = (side) => (c) => {
   const px = side === "L" ? 9 : 30 // pressed key under the paw
   c.hline(px, 54, 2, "j"); c.hline(px, 55, 2, "x")
 }
-// A left arm reaching down and forward onto the keyboard (drawn in front of the body).
-// Origin is the shoulder at x=1; the paw ends 8 rows below the origin.
-const TYPING_ARM = [
-  "..kk.........",
-  ".klllk.......",
-  ".kltttk......",
-  "..kTttlk.....",
-  "...kTttlk....",
-  "....kTttlk...",
-  ".....kTttk...",
-  "......kTTk...",
-  ".......kk....",
+// Typing arms are part of the body silhouette: the left shoulder (cols 0..9, from row 43) with the
+// arm hanging down to the keys. No outline at the shoulder joint, so the arm stays attached.
+const ARM_PRESS = [
+  "...klttttt",
+  "..kltttttt",
+  "..kltttttt",
+  "..kTtttttt",
+  "..kTtttttt",
+  "..kTTttttt",
+  "..kTTTTkTt",
+  "..kTTTTkTt",
+  "..kTTTTkTt",
+  "...kTTkkTt",
+  "....kk.kTt",
 ]
-const typingArm = (side, y) => (c) => {
-  TYPING_ARM.forEach((r, dy) => {
-    for (let dx = 0; dx < r.length; dx++) {
-      if (r[dx] === ".") continue
-      const x = 1 + dx
-      c.px(side === "L" ? x : mx(x), y + dy, r[dx])
-    }
+const ARM_LIFT = [
+  "...klttttt",
+  "..kltttttt",
+  "..kltttttt",
+  "..kTtttttt",
+  "..kTtttttt",
+  "..kTTttttt",
+  "..kTTTTkTt",
+  "...kTTkkTt",
+  "....kk.kTt",
+]
+// painted over the keyboard so the paws rest on top of it
+const typingArm = (side, block) => (c) => {
+  block.forEach((r, dy) => {
+    for (let x = 0; x < 10; x++) if (r[x] !== ".") c.px(side === "L" ? x : mx(x), 43 + dy, r[x])
   })
 }
-// pressing paw sits on the keys (y 44), the lifted paw hovers above them (y 42)
 const typing = (press) => ({
   arms: { L: "remove", R: "remove" },
-  after: [keyboard(press), typingArm("L", press === "L" ? 44 : 42), typingArm("R", press === "R" ? 44 : 42)],
+  after: [keyboard(press), typingArm("L", press === "L" ? ARM_PRESS : ARM_LIFT), typingArm("R", press === "R" ? ARM_PRESS : ARM_LIFT)],
 })
 const roll = (c) => {
   c.rect(7, 45, 27, 6, "k")
