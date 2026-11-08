@@ -122,19 +122,58 @@
       box.style.top = `${Math.round(l.height * 0.9 - h)}px`
       box.style.transform = ""
     } else {
-      box.style.left = `${Math.round((l.width - w) / 2)}px`
-      box.style.top = `${l.height - h - 24}px`
+      // main keeps the window on screen and says where the pet sits inside it
+      const cx = l.pet ? l.pet.cx : l.width / 2
+      const bottom = l.pet ? l.pet.bottom : l.height - 24
+      box.style.left = `${Math.round(cx - w / 2)}px`
+      box.style.top = `${Math.round(bottom - h)}px`
       box.style.transform = ""
     }
     positionPanels()
+    fitBubble()
   }
 
+  // Panels, the timer chip and the clock button stay inside the window (which main keeps on
+  // screen): panels open above the pet, or below it when there's more room there.
   function positionPanels() {
+    const W = S.layout.width
+    const H = S.layout.height
     const top = box.offsetTop
+    const petW = box.offsetWidth
+    const petCx = box.offsetLeft + petW / 2
+    const above = top
+    const below = H - (top + box.offsetHeight) - 22 // leave the name visible
     for (const el of [$("prompt"), $("reminders")]) {
-      el.style.bottom = `${S.layout.height - top + 6}px`
-      el.style.maxHeight = `${Math.max(120, top - 10)}px`
+      const pw = el.offsetWidth || 300
+      el.style.transform = "none"
+      el.style.left = `${Math.round(clamp(petCx - pw / 2, 4, W - pw - 4))}px`
+      if (above >= 170 || above >= below) {
+        el.style.top = ""
+        el.style.bottom = `${H - top + 6}px`
+        el.style.maxHeight = `${Math.max(100, above - 10)}px`
+      } else {
+        el.style.bottom = ""
+        el.style.top = `${top + box.offsetHeight + 22}px`
+        el.style.maxHeight = `${Math.max(100, below - 6)}px`
+      }
     }
+    body.classList.toggle("pomo-left", W - (box.offsetLeft + petW) < 90)
+    body.classList.toggle("clock-right", box.offsetLeft < 34)
+  }
+
+  // Keep the speech bubble inside the window: slide it sideways, or show it under the pet when
+  // there's no room above (the tail keeps pointing at the head).
+  function fitBubble() {
+    if (bubbleEl.classList.contains("hidden")) return
+    const W = S.layout.width
+    const petCx = box.offsetLeft + box.offsetWidth / 2
+    const bw = bubbleEl.offsetWidth
+    const left = petCx - bw / 2
+    const shift = left < 4 ? 4 - left : left + bw > W - 4 ? W - 4 - (left + bw) : 0
+    bubbleEl.style.marginLeft = `${Math.round(shift)}px`
+    bubbleEl.style.setProperty("--tail", `${Math.round(-shift)}px`)
+    const roomAbove = box.offsetTop + 5 * (S.drawScale || 3)
+    bubbleEl.classList.toggle("below", bubbleEl.offsetHeight + 12 > roomAbove)
   }
 
   // ------------------------------------------------------------ pose selection
@@ -259,7 +298,6 @@
     frameData = ctx.getImageData(0, 0, SW, SH).data
 
     // effects classes
-    body.classList.toggle("thinking", S.agent === "thinking" && pose === "think")
     body.classList.toggle("purring", t < S.purr.until)
     body.classList.toggle("sleeping", pose === "sleep0" || pose === "sleep1")
   }
@@ -356,18 +394,23 @@
     const t = now()
     let text = ""
     let fixed = false
+    let thinking = false
     if (S.transient && t < S.transient.until) text = S.transient.text
+    else if (S.agent === "thinking" && S.layout.mode === "normal") thinking = true
     else if (S.settings.fixedMessage && S.layout.mode === "normal") { text = S.settings.fixedMessage; fixed = true }
-    const key = `${fixed}:${text}`
+    const key = `${fixed}:${thinking}:${text}`
     if (key === shownText) return
     shownText = key
-    bubbleEl.textContent = text
-    bubbleEl.classList.toggle("hidden", !text)
+    if (thinking) bubbleEl.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>'
+    else bubbleEl.textContent = text
+    bubbleEl.classList.toggle("hidden", !text && !thinking)
     bubbleEl.classList.toggle("fixed", fixed)
+    bubbleEl.classList.toggle("think", thinking)
     // restart pop animation
     bubbleEl.style.animation = "none"
     void bubbleEl.offsetWidth
     bubbleEl.style.animation = ""
+    fitBubble()
   }
 
   function updateBubble(t) {

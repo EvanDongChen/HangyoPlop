@@ -102,13 +102,21 @@ function clampAnchor(a) {
   }
 }
 
+// Where the pet sits inside the normal window. The window is kept fully on screen, so near an
+// edge the pet is no longer centered in it; bubbles and panels then fit inside the screen.
+let petLocal = { cx: 0, bottom: 0 }
+
 function boundsForNormal(a) {
   const { width, height } = normalWindowSize()
-  return { x: Math.round(a.cx - width / 2), y: Math.round(a.bottom - height + BOTTOM_PAD), width, height }
+  const wa = workAreaAt({ x: a.cx, y: a.bottom - petSize().h / 2 })
+  const fit = (v, lo, hi) => Math.round(hi < lo ? lo : Math.min(Math.max(v, lo), hi))
+  const x = fit(a.cx - width / 2, wa.x, wa.x + wa.width - width)
+  const y = fit(a.bottom - height + BOTTOM_PAD, wa.y, wa.y + wa.height - height)
+  return { x, y, width, height, pet: { cx: Math.round(a.cx - x), bottom: Math.round(a.bottom - y) } }
 }
 
 function anchorFromBounds(b) {
-  return { cx: b.x + b.width / 2, bottom: b.y + b.height - BOTTOM_PAD }
+  return { cx: b.x + petLocal.cx, bottom: b.y + petLocal.bottom }
 }
 
 function applyLayout(next) {
@@ -117,7 +125,9 @@ function applyLayout(next) {
   const p = petSize()
   let bounds
   if (next.mode === "normal") {
-    bounds = boundsForNormal(clampAnchor(anchor()))
+    const nb = boundsForNormal(clampAnchor(anchor()))
+    petLocal = nb.pet
+    bounds = { x: nb.x, y: nb.y, width: nb.width, height: nb.height }
   } else if (next.mode === "peek") {
     // Pet lies sideways with its head poking in from the screen edge.
     const a = anchor()
@@ -136,7 +146,7 @@ function applyLayout(next) {
     bounds = { x: wa.x + Math.round((wa.width - side) / 2), y: wa.y + Math.round((wa.height - side) / 2), width: side, height: side }
   }
   win.setBounds(bounds)
-  send("layout", { ...next, scale: scale(), width: bounds.width, height: bounds.height })
+  send("layout", { ...next, scale: scale(), width: bounds.width, height: bounds.height, pet: petLocal })
 }
 
 function setPeek(edge) {
@@ -163,9 +173,13 @@ function setScale(s) {
 // ---------------------------------------------------------------- window
 
 function createWindow() {
-  const b = boundsForNormal(clampAnchor(anchor()))
+  const nb = boundsForNormal(clampAnchor(anchor()))
+  petLocal = nb.pet
   win = new BrowserWindow({
-    ...b,
+    x: nb.x,
+    y: nb.y,
+    width: nb.width,
+    height: nb.height,
     frame: false,
     transparent: true,
     resizable: false,
@@ -248,10 +262,12 @@ ipcMain.on("drag-start", (_e, localX, localY) => {
     // Pull the pet out of the edge: re-center the normal layout under the cursor.
     store.set("peekEdge", null)
     store.set("position", { cx: cur.x, bottom: cur.y + petSize().h * 0.35 })
-    const b = boundsForNormal(anchor())
+    const nb = boundsForNormal(anchor())
+    petLocal = nb.pet
+    const b = { x: nb.x, y: nb.y, width: nb.width, height: nb.height }
     layout = { mode: "normal" }
     win.setBounds(b)
-    send("layout", { mode: "normal", scale: scale(), width: b.width, height: b.height })
+    send("layout", { mode: "normal", scale: scale(), width: b.width, height: b.height, pet: petLocal })
     localX = cur.x - b.x
     localY = cur.y - b.y
     rebuildTrayMenu()
@@ -930,6 +946,7 @@ if (process.env.HANGYO_TOUR) {
   ipcMain.once("ready", async () => {
     fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(path.join(dir, "status.json"), JSON.stringify({ inputHookOk, packaged: app.isPackaged }))
+    const savedPosition = store.get("position")
     await wait(1500)
     await shot("01-idle")
     say("Hi! I'm Hangyodon. Blub!", 3000, "wave")
@@ -970,7 +987,29 @@ if (process.env.HANGYO_TOUR) {
     await wait(500)
     await shot("11-peek")
     setPeek(null)
+    // corners: bubbles and panels must stay inside the window, and the window on screen
+    const wa = screen.getPrimaryDisplay().workArea
+    const corner = async (name, cx, bottom) => {
+      store.set("position", { cx, bottom })
+      applyLayout({ mode: "normal" })
+      await wait(300)
+      say("This bubble should stay fully on screen. Blub blub!", 4000, "")
+      await wait(300)
+      await shot(`${name}-say`)
+      onAgentState({ session: "tour", state: "thinking" })
+      say("", 1, "")
+      await wait(400)
+      await shot(`${name}-think`)
+      onAgentState({ session: "tour", state: "idle" })
+      send("open-reminders")
+      await wait(300)
+      await shot(`${name}-reminders`)
+      fs.appendFileSync(path.join(dir, "bounds.txt"), `${name} window=${JSON.stringify(win.getBounds())} workArea=${JSON.stringify(wa)} pet=${JSON.stringify(petLocal)}\n`)
+    }
+    await corner("12-bottom-left", wa.x + 40, wa.y + wa.height - 22)
+    await corner("13-top-right", wa.x + wa.width - 40, wa.y + 190)
     store.set("peekEdge", null)
+    store.set("position", savedPosition)
     store.flush()
     app.quit()
   })

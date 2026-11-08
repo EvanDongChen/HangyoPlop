@@ -84,7 +84,7 @@ body.dragging #name-badge { display: none !important; }
 #bubble::after {
   content: "";
   position: absolute;
-  left: calc(50% - 5px);
+  left: calc(50% - 5px + var(--tail, 0px));
   bottom: -8px;
   width: 8px;
   height: 6px;
@@ -94,6 +94,15 @@ body.dragging #name-badge { display: none !important; }
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 #bubble.fixed { background: #eaf7fb; }
+/* no room above the head: show the bubble under the pet, tail pointing up */
+#bubble.below { bottom: auto; top: calc(100% + 20px); }
+#bubble.below::after { bottom: auto; top: -8px; transform: rotate(180deg); }
+/* Claude is thinking: three pixel dots blinking in turn */
+#bubble.think { display: flex; gap: 5px; padding: 8px 10px; }
+#bubble.think .dot { width: 6px; height: 6px; background: var(--ink); animation: dot 1.2s steps(2) infinite; }
+#bubble.think .dot:nth-child(2) { animation-delay: 0.2s; }
+#bubble.think .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 body[data-mode="peek"] #bubble { display: none; }
 
 @keyframes pop-in {
@@ -103,19 +112,7 @@ body[data-mode="peek"] #bubble { display: none; }
 
 /* ------------------------------------------------------------ effects */
 
-#dots, #hearts, #zzz { position: absolute; pointer-events: none; display: none; }
-
-#dots { right: 4%; top: 2%; gap: calc(var(--s) * 1.2); }
-#dots span {
-  width: calc(var(--s) * 1.6);
-  height: calc(var(--s) * 1.6);
-  background: var(--ink);
-  animation: dot 1.2s steps(2) infinite;
-}
-#dots span:nth-child(2) { animation-delay: 0.2s; }
-#dots span:nth-child(3) { animation-delay: 0.4s; }
-body.thinking #dots { display: flex; }
-@keyframes dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+#hearts, #zzz { position: absolute; pointer-events: none; display: none; }
 
 #hearts { left: 0; right: 0; top: -4%; height: 30%; }
 body.purring #hearts { display: block; }
@@ -150,7 +147,7 @@ body.sleeping #zzz { display: block; }
 #zzz span:nth-child(2) { left: 35%; animation-delay: 0.8s; font-size: calc(var(--s) * 3); }
 #zzz span:nth-child(3) { left: 65%; animation-delay: 1.6s; font-size: calc(var(--s) * 2.5); }
 
-body[data-mode="peek"] #hearts, body[data-mode="peek"] #zzz, body[data-mode="peek"] #dots { display: none; }
+body[data-mode="peek"] #hearts, body[data-mode="peek"] #zzz { display: none; }
 
 /* ------------------------------------------------------------ pomodoro chip */
 
@@ -167,6 +164,7 @@ body[data-mode="peek"] #hearts, body[data-mode="peek"] #zzz, body[data-mode="pee
   white-space: nowrap;
 }
 body.pomodoro #pomo { display: flex; }
+body.pomo-left #pomo { left: auto; right: calc(100% - 2 * var(--s)); }
 body[data-mode="peek"] #pomo, body[data-mode="big"] #pomo { display: none !important; }
 #pomo.rest { background: #e7f8ee; }
 #pomo.paused #pomo-time { animation: blink 1s steps(1) infinite; }
@@ -207,6 +205,7 @@ body[data-mode="peek"] #pomo, body[data-mode="big"] #pomo { display: none !impor
 }
 #clock-btn svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 body.hover #clock-btn, body[data-clock="1"] #clock-btn { display: block; }
+body.clock-right #clock-btn { right: auto; left: calc(100% - 6 * var(--s)); }
 body[data-mode="peek"] #clock-btn, body[data-mode="big"] #clock-btn, body.dragging #clock-btn { display: none !important; }
 
 /* ------------------------------------------------------------ panels */
