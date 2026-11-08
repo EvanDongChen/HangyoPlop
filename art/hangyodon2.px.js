@@ -45,7 +45,7 @@ const HALF = [
   "kffDfklttttkkkkkttttt",
   ".kfDfkTtttttttttttttt",
   "..kffkTtkkkkkkkkkkkkk",
-  "...kkkMpppppppppppppp",
+  "...kkkkkppppppppppppp",
   "....kpPpppppppppppppp",
   "....kppPPPPPPPppppppp",
   "....kpppppppppPPPPPPP",
