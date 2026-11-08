@@ -7,6 +7,7 @@
   "private": true,
   "scripts": {
     "start": "node scripts/start.js",
+    "shortcut": "node scripts/make-shortcut.js",
     "art": "node .claude/skills/pxl-pixel-art/bin/pxl.js build art/hangyodon.px.js && node scripts/copy-sprites.js",
     "dist": "electron-builder --win"
   },
@@ -20,9 +21,26 @@
   "build": {
     "appId": "local.hangyoplop",
     "productName": "HangyoPlop",
-    "files": ["src/**/*", "package.json"],
-    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
-    "publish": null
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "HangyoPlop-Setup-${version}.${ext}",
+      "shortcutName": "HangyoPlop"
+    },
+    "publish": null,
+    "portable": {
+      "artifactName": "HangyoPlop-${version}-portable.${ext}"
+    }
   }
 }

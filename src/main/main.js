@@ -953,6 +953,11 @@ if (process.env.HANGYO_TOUR) {
     fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(path.join(dir, "status.json"), JSON.stringify({ inputHookOk, packaged: app.isPackaged }))
     const savedPosition = store.get("position")
+    const savedScale = store.get("scale")
+    if (process.env.HANGYO_TOUR_SCALE) {
+      store.set("scale", Number(process.env.HANGYO_TOUR_SCALE))
+      applyLayout({ mode: "normal" })
+    }
     await wait(1500)
     await shot("01-idle")
     say("Hi! I'm Hangyodon. Blub!", 3000, "wave")
@@ -1017,8 +1022,26 @@ if (process.env.HANGYO_TOUR) {
     }
     await corner("12-bottom-left", wa.x + 40, wa.y + wa.height - 22)
     await corner("13-top-right", wa.x + wa.width - 40, wa.y + 190)
+    // a frame sequence of Claude thinking then finishing, for the README
+    if (process.env.HANGYO_TOUR_SEQ) {
+      await win.webContents.executeJavaScript("document.getElementById('rem-close').click()")
+      store.set("position", { cx: wa.x + wa.width / 2, bottom: wa.y + wa.height / 2 + 150 })
+      applyLayout({ mode: "normal" })
+      await wait(400)
+      fs.mkdirSync(path.join(dir, "seq"), { recursive: true })
+      let n = 0
+      const grab = async (ms) => {
+        const until = Date.now() + ms
+        while (Date.now() < until) { await shot(`seq/${String(n++).padStart(3, "0")}`); await wait(90) }
+      }
+      onAgentState({ session: "tour", state: "thinking" })
+      await grab(1800)
+      onAgentState({ session: "tour", state: "complete" })
+      await grab(2600)
+    }
     store.set("peekEdge", null)
     store.set("position", savedPosition)
+    store.set("scale", savedScale)
     store.flush()
     app.quit()
   })
