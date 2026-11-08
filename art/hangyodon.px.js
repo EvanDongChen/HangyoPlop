@@ -239,25 +239,24 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
   sprite(name, { w: W, h: PH }, ...props, toGrid(rows), ...after, (c) => { for (const [x, y, ch] of onTop) c.px(x, y, ch) })
 }
 
-// Two big keycaps, one under each paw (like Comnyang's typing pose). The pressed key sits
-// 2 rows lower, so its top face drops and its front face gets shorter.
-const keycap = (side, pressed) => (c) => {
-  const t = pressed ? 52 : 50
-  const X = (x) => (side === "L" ? x : mx(x) - 0)
-  const x0 = 0, x1 = 15
-  for (let y = t; y <= 57; y++) for (let x = x0; x <= x1; x++) {
-    let ch
-    if (y === t || y === 57 || x === x0 || x === x1) ch = "k"
-    else if (y <= t + 3) ch = y === t + 1 ? "g" : x <= x0 + 1 ? "G" : "g"
-    else if (y === t + 4) ch = "G"
-    else ch = "x"
-    c.px(X(x), y, ch)
-  }
+// A small open laptop in front of him: the keyboard deck shows on both sides of the lid,
+// the lid's back (with a bubble logo) faces us. Paws tap on the deck's keys.
+const laptopDeck = (c) => {
+  c.hline(4, 52, 33, "k")
+  for (let y = 53; y <= 56; y++) { c.px(3, y, "k"); c.hline(4, y, 33, "x"); c.px(37, y, "k") }
+  c.hline(3, 57, 35, "k")
+  for (const x of [5, 8, 30, 33]) { c.hline(x, 53, 2, "g"); c.hline(x, 55, 2, "g") }
+  for (const x of [6, 31]) c.hline(x, 54, 2, "g")
 }
-const keyboard = (press) => (c) => {
-  keycap("L", press === "L")(c)
-  keycap("R", press === "R")(c)
+const laptopLid = (c) => {
+  c.rect(11, 42, 19, 15, "k")
+  c.rect(12, 43, 17, 13, "g")
+  c.vline(28, 43, 13, "G")
+  c.hline(12, 55, 17, "G")
+  // bubble logo
+  c.hline(19, 47, 3, "u"); c.rect(18, 48, 5, 3, "u"); c.hline(19, 51, 3, "u"); c.px(19, 48, "w")
 }
+const keyboard = (press) => (c) => laptopDeck(c)
 // Typing arms hang from the shoulders as part of the silhouette (cols 0..9, from row 43),
 // with the paw resting on a big keycap. The pressing paw reaches 2 rows lower.
 const ARM_PRESS = [
@@ -292,7 +291,7 @@ const typingArm = (side, block) => (c) => {
 }
 const typing = (press) => ({
   arms: { L: "remove", R: "remove" },
-  after: [keyboard(press), typingArm("L", press === "L" ? ARM_PRESS : ARM_LIFT), typingArm("R", press === "R" ? ARM_PRESS : ARM_LIFT)],
+  after: [laptopDeck, typingArm("L", press === "L" ? ARM_PRESS : ARM_LIFT), typingArm("R", press === "R" ? ARM_PRESS : ARM_LIFT), laptopLid],
 })
 const roll = (c) => {
   c.rect(7, 45, 27, 6, "k")
