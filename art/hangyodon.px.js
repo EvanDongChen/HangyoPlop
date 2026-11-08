@@ -161,16 +161,36 @@ const toGrid = (rows) => {
   return grid(0, first, rows.slice(first).join("\n"))
 }
 
-// A stubby arm from the shoulder to (x1, y1): outline then fill, rounded ends.
-const arm = (x0, y0, x1, y1) => (c) => {
-  c.line(x0, y0, x1, y1, "k", 5)
-  c.line(x0, y0, x1, y1, "t", 3)
+// Arms reuse the idle arm stub pixels (rows 43..48, cols 0..9 on this canvas) and just move them:
+// "up" flips the stub vertically so it flaps up, "upHigh" also lifts it 2 rows, "down" lowers it
+// 2 rows (resting on the keyboard). dy = how far the pose moved the body.
+function stub(rows, side, mode, dy = 0) {
+  const y0 = 43 + dy
+  const X = (x) => (side === "L" ? x : mx(x))
+  const block = []
+  for (let y = 0; y < 6; y++) {
+    let r = ""
+    for (let x = 0; x < 10; x++) r += rows[y0 + y][X(x)]
+    block.push(r)
+  }
+  noArm(rows, side, dy)
+  let out = block
+  let at = y0
+  if (mode === "up" || mode === "upHigh") {
+    // flip, and swap the rim light and the underside shade so the lighting still comes from above
+    out = block.slice().reverse().map((r) => r.replace(/[lT]/g, (c) => (c === "l" ? "T" : "l")))
+    if (mode === "upHigh") at = y0 - 2
+  }
+  if (mode === "down") at = y0 + 3
+  const pixels = []
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 10; x++) {
+    const ch = out[y][x]
+    if (ch !== ".") { put(rows, X(x), at + y, ch); pixels.push([X(x), at + y, ch]) }
+  }
+  return pixels
 }
-const SH = 45 // shoulder row on the 58-row canvas
-const armL = (x1, y1, dy = 0) => arm(7, SH + dy, x1, y1 + dy)
-const armR = (x1, y1, dy = 0) => arm(mx(7), SH + dy, mx(x1), y1 + dy)
 
-function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 0, arms, props = [], after = [] } = {}) {
+function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 0, arms = {}, props = [], after = [] } = {}) {
   let rows = BASE.slice()
   if (sq) rows = squash(rows, sq)
   if (tall) rows = stretch(rows, tall)
@@ -178,25 +198,29 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
   eyes(rows, e, dy)
   if (mouth === "o") mouthO(rows, dy)
   if (b) blush(rows, dy)
-  if (arms) for (const side of arms.remove || ["L", "R"]) noArm(rows, side, dy)
-  sprite(name, { w: W, h: PH }, toGrid(rows), ...props, ...(arms ? arms.draw : []), ...after)
+  // a lowered arm rests on top of props like the keyboard, so it is painted again last
+  const onTop = []
+  for (const [side, mode] of Object.entries(arms)) {
+    const px = stub(rows, side, mode, dy)
+    if (mode === "down") onTop.push(...px)
+  }
+  sprite(name, { w: W, h: PH }, ...props, toGrid(rows), ...after, (c) => { for (const [x, y, ch] of onTop) c.px(x, y, ch) })
 }
 
 const keyboard = (c) => {
   c.rect(4, 49, 33, 9, "k")
   c.rect(5, 50, 31, 7, "g")
-  for (let i = 0; i < 8; i++) { c.hline(6 + i * 4, 51, 3, "G"); c.hline(6 + i * 4, 55, 3, "G") }
+  for (let i = 0; i < 7; i++) { c.hline(7 + i * 4, 51, 3, "G"); c.hline(7 + i * 4, 55, 3, "G") }
   for (let i = 0; i < 7; i++) c.hline(8 + i * 4, 53, 3, "G")
 }
 const roll = (c) => {
-  c.rect(11, 47, 19, 6, "k")
-  c.rect(12, 48, 17, 4, "y")
-  c.hline(12, 51, 17, "Y")
-  c.rect(11, 47, 2, 6, "Y"); c.rect(28, 47, 2, 6, "Y")
-  c.vline(11, 47, 6, "k"); c.vline(29, 47, 6, "k")
+  c.rect(8, 45, 25, 6, "k")
+  c.rect(9, 46, 23, 4, "y")
+  c.hline(9, 49, 23, "Y")
+  c.rect(9, 46, 2, 4, "Y"); c.rect(30, 46, 2, 4, "Y")
 }
 const mug = (tilt) => (c) => {
-  const x = 27, y = tilt ? 32 : 35
+  const x = 30, y = tilt ? 34 : 36
   c.rect(x, y, 7, 8, "k")
   c.rect(x + 1, y + 1, 5, 6, "y")
   c.vline(x + 5, y + 1, 6, "Y")
@@ -211,19 +235,19 @@ pose("sleep0", { eyes: "closed", squash: 1 })
 pose("sleep1", { eyes: "closed", squash: 2 })
 pose("happy0", { eyes: "happy", blush: true })
 pose("happy1", { eyes: "happy", blush: true, squash: 1 })
-pose("pressL", { arms: { draw: [armL(11, 50), armR(9, 47)] }, props: [keyboard] })
-pose("pressR", { arms: { draw: [armL(9, 47), armR(11, 50)] }, props: [keyboard] })
-pose("scroll", { arms: { draw: [armL(13, 48), armR(13, 48)] }, after: [roll] })
-pose("hunt", { squash: 3, arms: { draw: [armL(5, 51, 3), armR(5, 51, 3)] } })
+pose("pressL", { arms: { L: "down" }, after: [keyboard] })
+pose("pressR", { arms: { R: "down" }, after: [keyboard] })
+pose("scroll", { after: [roll] })
+pose("hunt", { squash: 3 })
 pose("jumpCrouch", { eyes: "squeeze", squash: 3 })
-pose("jumpAir", { eyes: "happy", mouth: "o", blush: true, arms: { draw: [armL(2, 34), armR(2, 34)] } })
-pose("stretch0", { eyes: "closed", mouth: "o", arms: { draw: [armL(3, 33), armR(3, 33)] } })
-pose("stretch1", { eyes: "squeeze", mouth: "o", blush: true, tall: 3, arms: { draw: [armL(3, 32, -3), armR(3, 32, -3)] } })
-pose("drink0", { mouth: "o", arms: { remove: ["R"], draw: [armR(9, 40)] }, props: [], after: [mug(false), armR(8, 41)] })
-pose("drink1", { eyes: "closed", mouth: "o", blush: true, arms: { remove: ["R"], draw: [] }, after: [mug(true), armR(8, 38)] })
-pose("drag", { mouth: "o", arms: { draw: [armL(3, 33), armR(3, 33)] } })
-pose("think", { eyes: "lid", arms: { remove: ["R"], draw: [armR(13, 42)] } })
-pose("wave", { eyes: "happy", blush: true, arms: { remove: ["R"], draw: [armR(1, 36)] } })
+pose("jumpAir", { eyes: "happy", mouth: "o", blush: true, arms: { L: "upHigh", R: "upHigh" } })
+pose("stretch0", { eyes: "closed", mouth: "o", arms: { L: "up", R: "up" } })
+pose("stretch1", { eyes: "squeeze", mouth: "o", blush: true, tall: 3, arms: { L: "upHigh", R: "upHigh" } })
+pose("drink0", { mouth: "o", arms: { R: "upHigh" }, after: [mug(false)] })
+pose("drink1", { eyes: "closed", mouth: "o", blush: true, arms: { R: "upHigh" }, after: [mug(true)] })
+pose("drag", { mouth: "o", arms: { L: "upHigh", R: "upHigh" } })
+pose("think", { eyes: "lid" })
+pose("wave", { eyes: "happy", blush: true, arms: { R: "upHigh" } })
 pose("peek")
 
 const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL", "pressR", "scroll", "hunt",
