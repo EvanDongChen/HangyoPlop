@@ -1,0 +1,28 @@
+{
+  "name": "hangyoplop",
+  "productName": "HangyoPlop",
+  "version": "0.1.0",
+  "description": "An offline pixel-art Hangyodon desktop pet with reminders, pomodoro and coding-agent reactions.",
+  "main": "src/main/main.js",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/start.js",
+    "art": "node .claude/skills/pxl-pixel-art/bin/pxl.js build art/hangyodon.px.js && node scripts/copy-sprites.js",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {
+    "uiohook-napi": "^1.5.4"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "local.hangyoplop",
+    "productName": "HangyoPlop",
+    "files": ["src/**/*", "package.json"],
+    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
+    "publish": null
+  }
+}

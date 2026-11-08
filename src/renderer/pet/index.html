@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'">
+  <title>HangyoPlop</title>
+  <link rel="stylesheet" href="pet.css">
+</head>
+<body>
+  <div id="pet-box">
+    <div id="bubble" class="hidden"></div>
+    <div id="dots" aria-label="thinking"><span></span><span></span><span></span></div>
+    <div id="hearts" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div id="zzz" aria-hidden="true"><span>Z</span><span>z</span><span>z</span></div>
+    <div id="steam" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <canvas id="pet" width="42" height="48"></canvas>
+    <div id="name-badge"></div>
+    <div id="pomo" class="ui">
+      <span id="pomo-icon"></span><span id="pomo-time">25:00</span>
+      <button type="button" id="pomo-toggle" title="Pause">II</button>
+      <button type="button" id="pomo-reset" title="Reset">↺</button>
+    </div>
+    <button id="clock-btn" class="ui" type="button" title="Reminders" aria-label="Open reminders">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <rect x="6" y="1" width="4" height="2" fill="currentColor"/><rect x="4" y="3" width="8" height="2" fill="currentColor"/>
+        <rect x="2" y="5" width="2" height="6" fill="currentColor"/><rect x="12" y="5" width="2" height="6" fill="currentColor"/>
+        <rect x="4" y="11" width="8" height="2" fill="currentColor"/><rect x="7" y="5" width="2" height="4" fill="currentColor"/>
+        <rect x="8" y="8" width="3" height="2" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+
+  <form id="prompt" class="ui panel hidden" autocomplete="off">
+    <div id="prompt-title"></div>
+    <div class="row">
+      <input id="prompt-input" type="text">
+      <span id="prompt-unit"></span>
+      <button type="submit">OK</button>
+      <button type="button" id="prompt-cancel">×</button>
+    </div>
+  </form>
+
+  <section id="reminders" class="ui panel hidden" aria-label="Reminders">
+    <header>
+      <strong>Reminders</strong>
+      <span>
+        <button type="button" id="rem-add">Add</button>
+        <button type="button" id="rem-close">Close</button>
+      </span>
+    </header>
+    <form id="rem-form" class="hidden" autocomplete="off">
+      <div class="row">
+        <input id="rem-time" type="time" required>
+        <span class="seg" role="group" aria-label="Repeat">
+          <button type="button" data-repeat="once" class="on">Once</button>
+          <button type="button" data-repeat="days">Choose days</button>
+        </span>
+      </div>
+      <div id="rem-days" class="row hidden">
+        <span class="days"></span>
+        <span class="quick">
+          <button type="button" data-quick="daily">Daily</button>
+          <button type="button" data-quick="weekdays">Weekdays</button>
+          <button type="button" data-quick="weekends">Weekends</button>
+        </span>
+      </div>
+      <div class="row">
+        <input id="rem-msg" type="text" maxlength="80" placeholder="What should I remind you?" required>
+      </div>
+      <div class="row end">
+        <button type="button" id="rem-cancel">Cancel</button>
+        <button type="submit" id="rem-save">Save</button>
+      </div>
+    </form>
+    <div id="rem-list"></div>
+  </section>
+
+  <div id="rec" class="hidden">● REC <span id="rec-time"></span></div>
+
+  <script src="../../shared/colors.js"></script>
+  <script src="sound.js"></script>
+  <script src="pet.js"></script>
+</body>
+</html>
