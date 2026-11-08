@@ -239,23 +239,27 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
   sprite(name, { w: W, h: PH }, ...props, toGrid(rows), ...after, (c) => { for (const [x, y, ch] of onTop) c.px(x, y, ch) })
 }
 
-// A slim keyboard seen at an angle: narrower at the back, light keycaps, a spacebar.
-// side = which paw is pressing; the key under it is drawn pushed down.
-const keyboard = (side) => (c) => {
-  const rowsSpan = [[7, 33], [6, 34], [5, 35], [4, 36], [4, 36], [3, 37], [3, 37]] // y 51..57
-  rowsSpan.forEach(([x0, x1], i) => {
-    c.hline(x0, 51 + i, x1 - x0 + 1, "k")
-    if (i > 0 && i < rowsSpan.length - 1) c.hline(x0 + 1, 51 + i, x1 - x0 - 1, "x")
-  })
-  const keys = (y, x0, x1, step) => { for (let x = x0; x + 1 <= x1; x += step) { c.hline(x, y, 2, "g"); c.hline(x, y + 1, 2, "G") } }
-  keys(52, 9, 31, 3)
-  keys(54, 7, 33, 3)
-  c.hline(14, 56, 13, "g") // spacebar
-  const px = side === "L" ? 9 : 30 // pressed key under the paw
-  c.hline(px, 54, 2, "j"); c.hline(px, 55, 2, "x")
+// Two big keycaps, one under each paw (like Comnyang's typing pose). The pressed key sits
+// 2 rows lower, so its top face drops and its front face gets shorter.
+const keycap = (side, pressed) => (c) => {
+  const t = pressed ? 52 : 50
+  const X = (x) => (side === "L" ? x : mx(x) - 0)
+  const x0 = 0, x1 = 15
+  for (let y = t; y <= 57; y++) for (let x = x0; x <= x1; x++) {
+    let ch
+    if (y === t || y === 57 || x === x0 || x === x1) ch = "k"
+    else if (y <= t + 3) ch = y === t + 1 ? "g" : x <= x0 + 1 ? "G" : "g"
+    else if (y === t + 4) ch = "G"
+    else ch = "x"
+    c.px(X(x), y, ch)
+  }
 }
-// Typing arms are part of the body silhouette: the left shoulder (cols 0..9, from row 43) with the
-// arm hanging down to the keys. No outline at the shoulder joint, so the arm stays attached.
+const keyboard = (press) => (c) => {
+  keycap("L", press === "L")(c)
+  keycap("R", press === "R")(c)
+}
+// Typing arms hang from the shoulders as part of the silhouette (cols 0..9, from row 43),
+// with the paw resting on a big keycap. The pressing paw reaches 2 rows lower.
 const ARM_PRESS = [
   "...klttttt",
   "..kltttttt",
@@ -283,7 +287,7 @@ const ARM_LIFT = [
 // painted over the keyboard so the paws rest on top of it
 const typingArm = (side, block) => (c) => {
   block.forEach((r, dy) => {
-    for (let x = 0; x < 10; x++) if (r[x] !== ".") c.px(side === "L" ? x : mx(x), 43 + dy, r[x])
+    for (let x = 0; x < r.length; x++) if (r[x] !== ".") c.px(side === "L" ? x : mx(x), 43 + dy, r[x])
   })
 }
 const typing = (press) => ({
