@@ -21,8 +21,10 @@ pal({
   m: "#bb8d9f", // lip light mauve
   P: "#51263a", // mouth line
   n: "#ff9db0", // blush
-  g: "#b7c0cf", // keyboard
-  G: "#6d778d", // keyboard keys
+  x: "#4b5468", // keyboard frame
+  g: "#e1e6ee", // keycap
+  G: "#9aa3b5", // keycap shadow
+  j: "#7d8799", // pressed keycap
   y: "#fff1c9", // paper / mug
   Y: "#d9b36a", // paper / mug shade
   u: "#7fc8ff", // water
@@ -185,6 +187,7 @@ function stub(rows, side, mode, dy = 0) {
     for (let x = 0; x < 10; x++) r += rows[y0 + y][X(x)]
     block.push(r)
   }
+  if (mode === "remove") { noArm(rows, side, dy); return [] }
   if (mode === "up") {
     RAISED.forEach((r, i) => { for (let x = 0; x < 10; x++) put(rows, X(x), 41 + dy + i, r[x]) })
     return []
@@ -197,12 +200,14 @@ function stub(rows, side, mode, dy = 0) {
     out = block.slice().reverse().map((r) => r.replace(/[lT]/g, (c) => (c === "l" ? "T" : "l")))
   }
   if (mode === "down") at = y0 + 3
+  if (mode === "tap" || mode === "lift") at = y0 + 2
+  if (mode === "press") at = y0 + 4
   const pixels = []
   for (let y = 0; y < 6; y++) for (let x = 0; x < 10; x++) {
     const ch = out[y][x]
     if (ch !== ".") { put(rows, X(x), at + y, ch); pixels.push([X(x), at + y, ch]) }
   }
-  if (mode === "down") {
+  if (mode !== "keep") {
     // the lowered arm's top row needs outline wherever nothing sits above it
     for (let x = 0; x < 10; x++) {
       const c = rows[at][X(x)]
@@ -228,18 +233,54 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
   const onTop = []
   for (const [side, mode] of Object.entries(arms)) {
     const px = stub(rows, side, mode, dy)
-    if (mode === "down") onTop.push(...px)
+    if (mode === "down" || mode === "press" || mode === "lift") onTop.push(...px)
   }
 
   sprite(name, { w: W, h: PH }, ...props, toGrid(rows), ...after, (c) => { for (const [x, y, ch] of onTop) c.px(x, y, ch) })
 }
 
-const keyboard = (c) => {
-  c.rect(4, 50, 33, 8, "k")
-  c.rect(5, 51, 31, 6, "g")
-  for (let i = 0; i < 7; i++) { c.hline(7 + i * 4, 52, 3, "G"); c.hline(7 + i * 4, 55, 3, "G") }
-  for (let i = 0; i < 7; i++) c.hline(8 + i * 4, 53, 3, "G")
+// A slim keyboard seen at an angle: narrower at the back, light keycaps, a spacebar.
+// side = which paw is pressing; the key under it is drawn pushed down.
+const keyboard = (side) => (c) => {
+  const rowsSpan = [[7, 33], [6, 34], [5, 35], [4, 36], [4, 36], [3, 37], [3, 37]] // y 51..57
+  rowsSpan.forEach(([x0, x1], i) => {
+    c.hline(x0, 51 + i, x1 - x0 + 1, "k")
+    if (i > 0 && i < rowsSpan.length - 1) c.hline(x0 + 1, 51 + i, x1 - x0 - 1, "x")
+  })
+  const keys = (y, x0, x1, step) => { for (let x = x0; x + 1 <= x1; x += step) { c.hline(x, y, 2, "g"); c.hline(x, y + 1, 2, "G") } }
+  keys(52, 9, 31, 3)
+  keys(54, 7, 33, 3)
+  c.hline(14, 56, 13, "g") // spacebar
+  const px = side === "L" ? 9 : 30 // pressed key under the paw
+  c.hline(px, 54, 2, "j"); c.hline(px, 55, 2, "x")
 }
+// A left arm reaching down and forward onto the keyboard (drawn in front of the body).
+// Origin is the shoulder at x=1; the paw ends 8 rows below the origin.
+const TYPING_ARM = [
+  "..kk.........",
+  ".klllk.......",
+  ".kltttk......",
+  "..kTttlk.....",
+  "...kTttlk....",
+  "....kTttlk...",
+  ".....kTttk...",
+  "......kTTk...",
+  ".......kk....",
+]
+const typingArm = (side, y) => (c) => {
+  TYPING_ARM.forEach((r, dy) => {
+    for (let dx = 0; dx < r.length; dx++) {
+      if (r[dx] === ".") continue
+      const x = 1 + dx
+      c.px(side === "L" ? x : mx(x), y + dy, r[dx])
+    }
+  })
+}
+// pressing paw sits on the keys (y 44), the lifted paw hovers above them (y 42)
+const typing = (press) => ({
+  arms: { L: "remove", R: "remove" },
+  after: [keyboard(press), typingArm("L", press === "L" ? 44 : 42), typingArm("R", press === "R" ? 44 : 42)],
+})
 const roll = (c) => {
   c.rect(7, 45, 27, 6, "k")
   c.rect(8, 46, 25, 4, "y")
@@ -262,8 +303,8 @@ pose("sleep0", { eyes: "closed", squash: 1 })
 pose("sleep1", { eyes: "closed", squash: 2 })
 pose("happy0", { eyes: "happy", blush: true })
 pose("happy1", { eyes: "happy", blush: true, squash: 1 })
-pose("pressL", { arms: { L: "down" }, after: [keyboard] })
-pose("pressR", { arms: { R: "down" }, after: [keyboard] })
+pose("pressL", typing("L"))
+pose("pressR", typing("R"))
 pose("scroll", { after: [roll] })
 pose("hunt", { squash: 3 })
 pose("jumpCrouch", { eyes: "squeeze", squash: 3 })
