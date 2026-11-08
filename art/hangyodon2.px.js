@@ -45,13 +45,11 @@ const HALF = [
   "kffDfklttttkkkkkttttt",
   ".kfDfkTtttttttttttttt",
   "..kffkTtkkkkkkkkkkkkk",
-  "...kkkkMppppppppppppp",
-  ".....kMpppppppppppppp",
-  "....kppPppppppppppppp",
-  "....kpppPPPPPPppppppp",
+  "...kkkMpppppppppppppp",
+  "....kpPpppppppppppppp",
+  "....kppPPPPPPPppppppp",
   "....kpppppppppPPPPPPP",
-  ".....kppppppppppppppp",
-  "......kMMMMMMMMMMMMMM",
+  ".....kMMMMMMMMMMMMMMM",
   "....kkkkkkkkkkkkkkkkk",
   "....klttTTTTTTTTTTTTT",
   "....klltttttttttttttt",
@@ -89,7 +87,7 @@ sprite("_crest", `
   .............kkkk.`)
 
 const OX = 7, OY = 1 // image offset of the sprite canvas
-sprite("idle", { w: 41, h: 55 },
+sprite("idle", { w: 41, h: 53 },
   stamp("_body", 0, 9 - OY),
   grid(21 - OX, 2 - OY, `
   ......kkkkk.......
