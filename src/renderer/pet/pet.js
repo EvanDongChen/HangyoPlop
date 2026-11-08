@@ -6,11 +6,11 @@
 
   const SW = 41
   const SH = 58
-  const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL", "pressR", "scroll", "hunt",
+  const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL0", "pressL1", "pressL2", "pressR0", "pressR1", "pressR2", "scroll", "hunt",
     "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
   // Eye-center row for poses that have open eyes (pupils are drawn live). Columns are fixed.
   // Poses with open eyes, and how far each one moved the head down from idle0.
-  const EYE_SHIFT = { idle0: 0, idle1: 1, pressL: 0, pressR: 0, scroll: 0, hunt: 3, drink0: 0, drag: 0, think: 0, peek: 0 }
+  const EYE_SHIFT = { idle0: 0, idle1: 1, pressL0: 0, pressL1: 0, pressL2: 0, pressR0: 0, pressR1: 0, pressR2: 0, scroll: 0, hunt: 3, drink0: 0, drag: 0, think: 0, peek: 0 }
   const EYE_CX = [13, 27] // eye-white centers (columns) in idle0
   const EYE_CY = 27 // eye-white center row in idle0
   const EYE_WHITE = [0xf4, 0xf8, 0xfa]
@@ -36,7 +36,7 @@
     wakeUntil: 0,
     blinkAt: now() + 2500,
     blinkUntil: 0,
-    press: { side: "L", until: 0 },
+    press: { side: "L", n: 0, until: 0 },
     keyTimes: [],
     heat: 0,
     scroll: { until: 0, paper: 0, offset: 0 },
@@ -161,8 +161,8 @@
     }
     if (t < S.hunt.until) return "hunt"
     if (t < S.purr.until) return Math.floor(t / 380) % 2 ? "happy1" : "happy0"
-    if (t < S.press.until) return S.press.side === "L" ? "pressL" : "pressR"
-    if (t < S.focusUntil) return Math.floor(t / 110) % 2 ? "pressL" : "pressR"
+    if (t < S.press.until) return `press${S.press.side}${S.press.n}`
+    if (t < S.focusUntil) { const k = Math.floor(t / 110); return `press${k % 2 ? "L" : "R"}${k % 3}` }
     if (t < S.scroll.until) return "scroll"
     if (t < S.waveUntil) return Math.floor(t / 300) % 2 ? "wave" : "happy0"
     if (S.agent === "thinking") return t < S.blinkUntil ? "blink" : "think"
@@ -853,7 +853,10 @@
     const t = now()
     markActive()
     S.keyTimes.push(t)
-    S.press = { side, until: t + 180 }
+    // hit a random key with the paw on that side, never the same key twice in a row
+    let n = Math.floor(Math.random() * 3)
+    if (S.press.side === side && n === S.press.n) n = (n + 1 + Math.floor(Math.random() * 2)) % 3
+    S.press = { side, n, until: t + 180 }
   })
   api.onWheel(() => {
     const t = now()

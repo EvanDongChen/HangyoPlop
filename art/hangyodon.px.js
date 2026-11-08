@@ -221,6 +221,8 @@ function stub(rows, side, mode, dy = 0) {
   return pixels
 }
 
+const TYPING_BASE = (() => { const r = BASE.slice(); noArm(r, "L"); noArm(r, "R"); return r })()
+
 // Poses hand-drawn in the Hangyodon Pixel Editor replace the generated version (full 41x58 rows).
 const OVERRIDES = {}
 
@@ -243,59 +245,70 @@ function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 
   sprite(name, { w: W, h: PH }, ...props, toGrid(rows), ...after, (c) => { for (const [x, y, ch] of onTop) c.px(x, y, ch) })
 }
 
-// A small open laptop in front of him: the keyboard deck shows on both sides of the lid,
-// the lid's back (with a bubble logo) faces us. Paws tap on the deck's keys.
-const laptopDeck = (c) => {
-  c.hline(4, 52, 33, "k")
-  for (let y = 53; y <= 56; y++) { c.px(3, y, "k"); c.hline(4, y, 33, "x"); c.px(37, y, "k") }
-  c.hline(3, 57, 35, "k")
-  for (const x of [5, 8, 30, 33]) { c.hline(x, 53, 2, "g"); c.hline(x, 55, 2, "g") }
-  for (const x of [6, 31]) c.hline(x, 54, 2, "g")
-}
-const laptopLid = (c) => {
-  c.rect(11, 42, 19, 15, "k")
-  c.rect(12, 43, 17, 13, "g")
-  c.vline(28, 43, 13, "G")
-  c.hline(12, 55, 17, "G")
-  // bubble logo
-  c.hline(19, 47, 3, "u"); c.rect(18, 48, 5, 3, "u"); c.hline(19, 51, 3, "u"); c.px(19, 48, "w")
-}
-const keyboard = (press) => (c) => laptopDeck(c)
-// Typing arms hang from the shoulders as part of the silhouette (cols 0..9, from row 43),
-// with the paw resting on a big keycap. The pressing paw reaches 2 rows lower.
-const ARM_PRESS = [
-  "...klttttt",
-  "..kltttttt",
-  "..kltttttt",
-  "..kTtttttt",
-  "..kTtttttt",
-  "..kTTttttt",
-  "..kTTTTkTt",
-  "..kTTTTkTt",
-  "..kTTTTkTt",
-  "...kTTkkTt",
-  "....kk.kTt",
-]
-const ARM_LIFT = [
-  "...klttttt",
-  "..kltttttt",
-  "..kltttttt",
-  "..kTtttttt",
-  "..kTtttttt",
-  "..kTTttttt",
-  "..kTTTTkTt",
-  "...kTTkkTt",
-  "....kk.kTt",
-]
-// painted over the keyboard so the paws rest on top of it
-const typingArm = (side, block) => (c) => {
-  block.forEach((r, dy) => {
-    for (let x = 0; x < r.length; x++) if (r[x] !== ".") c.px(side === "L" ? x : mx(x), 43 + dy, r[x])
+// ---- typing: a keyboard in front, short arms reaching from the shoulders onto random keys
+const KB_TOP = 48
+const KB_ROWS = [[6, 34], [5, 35], [4, 36], [3, 37], [3, 37], [2, 38], [2, 38], [2, 38], [2, 38], [2, 38]] // y 48..57
+const KEY_ROWS = [50, 52, 54] // key rows (each key is 2 px wide + its shadow row)
+const keyX = (y) => { const [x0, x1] = KB_ROWS[y - KB_TOP]; const xs = []; for (let x = x0 + 2; x + 1 < x1 - 1; x += 3) xs.push(x); return xs }
+
+function drawKeyboard(c, pressed) {
+  KB_ROWS.forEach(([x0, x1], i) => {
+    const y = KB_TOP + i
+    const edge = i === 0 || i === KB_ROWS.length - 1
+    for (let x = x0; x <= x1; x++) c.px(x, y, edge || x === x0 || x === x1 ? "k" : "x")
   })
+  for (const y of KEY_ROWS) for (const x of keyX(y)) {
+    const down = pressed && pressed.some(([px, py]) => py === y && Math.abs(px - x) <= 1)
+    c.hline(x, y, 2, down ? "j" : "g")
+    c.hline(x, y + 1, 2, down ? "x" : "G")
+  }
 }
-const typing = (press) => ({
+
+// One arm: a short thick limb from the shoulder (sx, sy) to a paw at (px, py). It is painted
+// over the body; outline goes around the limb except where it grows out of the shoulder.
+function drawArm(c, rows, sx, sy, px, py) {
+  const cells = new Map()
+  const add = (x, y) => { if (x >= 0 && x < W && y >= 0 && y < PH) cells.set(x + "," + y, [x, y]) }
+  const steps = 24
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const cx = sx + (px - sx) * t, cy = sy + (py - sy) * t
+    const r = t > 0.8 ? 1.6 : 1.2 // the paw end is a bit rounder
+    for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++)
+      for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++)
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r + 0.3) add(x, y)
+  }
+  const isBody = (x, y) => rows[y] && rows[y][x] && rows[y][x] !== "."
+  const near = (x, y) => Math.hypot(x - sx, y - sy) < 3.2
+  const outline = new Map()
+  for (const [x, y] of cells.values()) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+    const X = x + dx, Y = y + dy, key = X + "," + Y
+    if (cells.has(key) || X < 0 || X >= W || Y < 0 || Y >= PH) continue
+    if (isBody(X, Y) && Y < KB_TOP && near(X, Y)) continue // no outline where the arm joins the shoulder
+    outline.set(key, [X, Y])
+  }
+  for (const [x, y] of outline.values()) c.px(x, y, "k")
+  for (const [x, y] of cells.values()) {
+    const below = !cells.has(x + "," + (y + 1))
+    c.px(x, y, below ? "T" : "t")
+  }
+}
+
+// Shoulder points (where each arm grows out of the body) and the keys each paw can reach.
+const SHOULDER = { L: [6, 44], R: [mx(6), 44] }
+const PAW_KEYS = { L: [[9, 51], [13, 50], [17, 52]], R: [[mx(9), 51], [mx(13), 50], [mx(17), 52]] }
+const PAW_REST = { L: [11, 46], R: [mx(11), 46] }
+
+const typing = (side, n) => ({
   arms: { L: "remove", R: "remove" },
-  after: [laptopDeck, typingArm("L", press === "L" ? ARM_PRESS : ARM_LIFT), typingArm("R", press === "R" ? ARM_PRESS : ARM_LIFT), laptopLid],
+  after: [(c) => {
+    const other = side === "L" ? "R" : "L"
+    const hit = PAW_KEYS[side][n]
+    const rows = TYPING_BASE
+    drawKeyboard(c, [[hit[0], hit[1] - (hit[1] % 2 ? 1 : 0)]])
+    drawArm(c, rows, ...SHOULDER[other], ...PAW_REST[other])
+    drawArm(c, rows, ...SHOULDER[side], ...hit)
+  }],
 })
 const roll = (c) => {
   c.rect(7, 45, 27, 6, "k")
@@ -319,8 +332,7 @@ pose("sleep0", { eyes: "closed", squash: 1 })
 pose("sleep1", { eyes: "closed", squash: 2 })
 pose("happy0", { eyes: "happy", blush: true })
 pose("happy1", { eyes: "happy", blush: true, squash: 1 })
-pose("pressL", typing("L"))
-pose("pressR", typing("R"))
+for (const side of ["L", "R"]) for (let n = 0; n < 3; n++) pose(`press${side}${n}`, typing(side, n))
 pose("scroll", { after: [roll] })
 pose("hunt", { squash: 3 })
 pose("jumpCrouch", { eyes: "squeeze", squash: 3 })
@@ -334,7 +346,7 @@ pose("think", { eyes: "lid" })
 pose("wave", { eyes: "happy", blush: true, arms: { R: "up" } })
 pose("peek")
 
-const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL", "pressR", "scroll", "hunt",
+const POSES = ["idle0", "idle1", "blink", "sleep0", "sleep1", "happy0", "happy1", "pressL0", "pressR0", "scroll", "hunt",
   "jumpCrouch", "jumpAir", "stretch0", "stretch1", "drink0", "drink1", "drag", "think", "wave", "peek"]
 scene("poses_a", { w: 44 * 7, h: 60 * 2, bg: "#e6ecec" }, ...POSES.slice(0, 14).map((n, i) => stamp(n, (i % 7) * 44 + 1, Math.floor(i / 7) * 60 + 1)))
 scene("poses_b", { w: 44 * 7, h: 60, bg: "#e6ecec" }, ...POSES.slice(14).map((n, i) => stamp(n, i * 44 + 1, 1)))
