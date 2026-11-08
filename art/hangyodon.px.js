@@ -221,7 +221,11 @@ function stub(rows, side, mode, dy = 0) {
   return pixels
 }
 
+// Poses hand-drawn in the Hangyodon Pixel Editor replace the generated version (full 41x58 rows).
+const OVERRIDES = {}
+
 function pose(name, { eyes: e = "open", mouth, blush: b, squash: sq = 0, tall = 0, arms = {}, props = [], after = [] } = {}) {
+  if (OVERRIDES[name]) { sprite(name, { w: W, h: PH }, toGrid(OVERRIDES[name])); return }
   let rows = BASE.slice()
   if (sq) rows = squash(rows, sq)
   if (tall) rows = stretch(rows, tall)
