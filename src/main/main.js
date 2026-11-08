@@ -14,6 +14,7 @@ const MAX_SCALE = 6
 const DEFAULT_SCALE = 3
 const BUBBLE_ROOM = 230 // space above the pet for speech bubbles, panels and jumps
 const ACTIVITY_MS = 5600
+const BOTTOM_PAD = 24 // room under the pet for its name
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -77,7 +78,7 @@ function petSize(s = scale()) {
 
 function normalWindowSize() {
   const p = petSize()
-  return { width: Math.max(p.w + 140, 330), height: p.h + BUBBLE_ROOM }
+  return { width: Math.max(p.w + 140, 330), height: p.h + BUBBLE_ROOM + BOTTOM_PAD }
 }
 
 function workAreaAt(point) {
@@ -97,17 +98,17 @@ function clampAnchor(a) {
   const wa = workAreaAt({ x: a.cx, y: a.bottom - p.h / 2 })
   return {
     cx: Math.min(Math.max(a.cx, wa.x + p.w / 2), wa.x + wa.width - p.w / 2),
-    bottom: Math.min(Math.max(a.bottom, wa.y + p.h), wa.y + wa.height),
+    bottom: Math.min(Math.max(a.bottom, wa.y + p.h), wa.y + wa.height - BOTTOM_PAD + 4),
   }
 }
 
 function boundsForNormal(a) {
   const { width, height } = normalWindowSize()
-  return { x: Math.round(a.cx - width / 2), y: Math.round(a.bottom - height + 4), width, height }
+  return { x: Math.round(a.cx - width / 2), y: Math.round(a.bottom - height + BOTTOM_PAD), width, height }
 }
 
 function anchorFromBounds(b) {
-  return { cx: b.x + b.width / 2, bottom: b.y + b.height - 4 }
+  return { cx: b.x + b.width / 2, bottom: b.y + b.height - BOTTOM_PAD }
 }
 
 function applyLayout(next) {

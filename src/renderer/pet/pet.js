@@ -124,7 +124,7 @@
       box.style.transform = ""
     } else {
       box.style.left = `${Math.round((l.width - w) / 2)}px`
-      box.style.top = `${l.height - h - 4}px`
+      box.style.top = `${l.height - h - 24}px`
       box.style.transform = ""
     }
     positionPanels()
