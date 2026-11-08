@@ -23,84 +23,65 @@ pal({
   n: "#ff9db0", // blush
 })
 
-// Left half incl. the shared center column (21 cols); image rows 9..53.
-const HALF = [
-  "............kkkkkkkkk",
-  "..........kklllllllll",
-  ".........kllllltttttt",
-  "........klllttttttttt",
-  "........klltttttttttt",
-  ".......kllttttttttttt",
-  "......klltttttttttttt",
-  "......klttttttttttttt",
-  "......klttttttttttttt",
-  ".....klttttkkkkkttttt",
-  ".....kltttkwwwwwktttt",
-  "..kkkklttkwwwwwwwkttt",
-  ".khffkltkwwwwwwwwwktt",
-  "khhfDkltkwwwwwwwwwktt",
-  "khfDfkltkwwwwwwwwwktt",
-  "kffDfkltkwwwwwwwwwktt",
-  "kfDfDkltkwwwwwwwwwktt",
-  "kfDfDklttkwwwwwwwkttt",
-  "kfDffkltttkwwwwwktttt",
-  "kffDfklttttkkkkkttttt",
-  ".kfDfkTtttttttttttttt",
-  "..kffkTtttkkkkkkkkkkk",
-  "...kkkTkkkqpppppppppp",
-  ".....kkpppppppppppppp",
-  ".....kkpPPPPPPppppppp",
-  ".....kkpppppppPPPPPPP",
-  ".......kkMMMMMMMMMMMM",
-  ".....kkkkkkkkkkkkkkkk",
-  "....klttTTTTTTTTTTTTT",
-  "....klltttttttttttttt",
-  "...klltttttTtttTttTtt",
-  ".kkltttttttTtttTttTtt",
-  ".kllttttttttTTTttttTT",
-  ".kTTttttttttttttttttt",
-  "..kTTTTTkkttttTtttTtt",
-  "...kkkkkkTttttTtttTtt",
-  ".......kTttttttTTTttt",
-  ".......kTtttttttttttt",
-  ".......kTtttttttttttt",
-  ".......kTtttttttttttt",
-  ".......kTttttttttTTTT",
-  "......kTTttttttttTkkk",
-  ".....kTtttttttttttttk",
-  ".....kTTttTttTTttTTTk",
-  "......kkkkkkkkkkkkkkk",
+// The master idle sprite (41x53), as edited by hand in the Hangyodon Pixel Editor artifact.
+// Row 0 is blank; IDLE holds rows 1..52.
+const IDLE = [
+  "....................kkkkk................",
+  "...................khhfffk...............",
+  "..................khhfffffkkk............",
+  "..................kffDFfffffFk...........",
+  ".................kfffDFffDDffFk..........",
+  ".................kfffDFfDFFfffFk.........",
+  ".................kfffDFfDFfffDfk.........",
+  "............kkkkkkkkkkkkkkkkDFfk.........",
+  "..........kklllllllllllllllkkkk..........",
+  ".........kllllltttttttttttlllllk.........",
+  "........kllltttttttttttttttttlllk........",
+  "........klltttttttttttttttttttllk........",
+  ".......klltttttttttttttttttttttllk.......",
+  "......klltttttttttttttttttttttttllk......",
+  "......kltttttttttttttttttttttttttlk......",
+  "......kltttttttttttttttttttttttttlk......",
+  ".....klttttkkkkktttttttttkkkkkttttlk.....",
+  ".....kltttkwwwwwktttttttkwwwwwktttlk.....",
+  "..kkkklttkwwwwwwwktttttkwwwwwwwkttlkkkk..",
+  ".khffkltkwwwwwwwwwktttkwwwwwwwwwktlkffhk.",
+  "khhffkltkwwwwwwwwwktttkwwwwwwwwwktlkffhhk",
+  "khfDDkltkwwwwwwwwwktttkwwwwwwwwwktlkDDfhk",
+  "kffFFkltkwwwwwwwwwktttkwwwwwwwwwktlkFFffk",
+  "kffffkltkwwwwwwwwwktttkwwwwwwwwwktlkffffk",
+  "kfDDDklttkwwwwwwwktttttkwwwwwwwkttlkDDDfk",
+  "kffFFkltttkwwwwwktttttttkwwwwwktttlkFFFfk",
+  "kffffklttttkkkkktttttttttkkkkkttttlkffffk",
+  ".kfffkTtttttttttttttttttttttttttttTkfffk.",
+  "..kffkTtttkkkkkkkkkkkkkkkkkkkkktttTkffk..",
+  "...kkkTkkkqpppppppppppppppppppqkkkTkkk...",
+  ".....kkpppppppppppppppppppppppppppkk.....",
+  "......kpPPPPPPpppppppppppppPPPPPPpk......",
+  "......kpppppppPPPPPPPPPPPPPpppppppk......",
+  ".....klkkMMMMMMMMMMMMMMMMMMMMMMMkklk.....",
+  ".....klTkkkkkkkkkkkkkkkkkkkkkkkkkTlk.....",
+  "....klttTTTTTTTTTTTTTTTTTTTTTTTTTttlk....",
+  "....kltttttttttttttttttttttttttttttlk....",
+  "...klttttttTtttTttTtttTttTtttTttttttlk...",
+  ".kkltttttttTtttTttTtttTttTtttTtttttttlkk.",
+  ".kllttttttttTTTttttTTTttttTTTttttttttllk.",
+  ".kTTtttttttttttttttttttttttttttttttttTTk.",
+  "..kTTTTTkkttttTtttTtttTtttTttttkkTTTTTk..",
+  "...kkkkkkTttttTtttTtttTtttTttttTkkkkkk...",
+  ".......kTttttttTTTtttttTTTttttttTk.......",
+  ".......kTtttttttttttttttttttttttTk.......",
+  ".......kTtttttttttttttttttttttttTk.......",
+  ".......kTtttttttttttttttttttttttTk.......",
+  ".......kTttttttttTTTTTTTttttttttTk.......",
+  "......kTTttttttttTkkkkkTttttttttTTk......",
+  ".....kTtttttttttttttktttttttttttttTk.....",
+  ".....kTTttTttTTttTTTkTTTttTTttTttTTk.....",
+  "......kkkkkkkkkkkkkkkkkkkkkkkkkkkkk......",
 ]
-HALF.forEach((r, i) => { if (r.length !== 21) throw new Error(`HALF row ${i} has ${r.length} cols`) })
+IDLE.forEach((r, i) => { if (r.length !== 41) throw new Error(`IDLE row ${i + 1} has ${r.length} cols`) })
 
-// Body, head, fins, lips (symmetric). Row 0 here = image row 9.
-sprite("_body", { mx: "c", w: 41, h: HALF.length }, grid(0, 0, HALF.join("\n")))
-
-// Crest leaning right with a curl (asymmetric). Image cols 21..38, rows 1..10.
-sprite("_crest", `
-  ......kkkkk.......
-  .....khhfffk......
-  ....khhffDffkkk...
-  ....kfffDkffffFk..
-  ...kffffDDffffDFk.
-  ...kffffDfffDDffFk
-  ...kffffffffFkfffk
-  .............kDDfk
-  .............kkkk.`)
-
-const OX = 7, OY = 1 // image offset of the sprite canvas
-sprite("idle", { w: 41, h: 53 },
-  stamp("_body", 0, 9 - OY),
-  grid(21 - OX, 2 - OY, `
-  ......kkkkk.......
-  .....khhfffk......
-  ....khhffDffkkk...
-  ....kfffDkffffFk..
-  ...kffffDDffffDFk.
-  ...kffffDfffDDffFk
-  ...kffffffffFkfffk
-  .............kDDfk
-  .............kkkk.`))
+sprite("idle", { w: 41, h: 53 }, grid(0, 1, IDLE.join("\n")))
 
 // Pupils as in the reference (the app draws these live)
 sprite("idle_preview", { base: "idle" },
