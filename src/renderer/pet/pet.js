@@ -357,9 +357,6 @@
       sx = 1 / Math.sqrt(sy)
     }
     if (t < S.purr.until) sx *= 1 + Math.sin(t / 60) * 0.01
-    if (S.fidget && S.fidget.kind === "sway" && t < S.fidget.until && !S.drag && !S.jump) {
-      tx += (Math.floor((t - S.fidget.start) / 380) % 2 ? 1 : -1) * s // whole art pixels, stays crisp
-    }
     canvas.style.transform = `translate(${tx}px, ${ty}px) skewX(${skew}deg) scale(${sx}, ${sy})`
     canvas.style.transformOrigin = S.drag ? "50% 6%" : "50% 100%"
   }
@@ -377,7 +374,7 @@
   // When nothing has happened for a few seconds he does small things on his own.
 
   const FIDGETS = [
-    ["glance", 3, 2200], ["bubbles", 2, 2600], ["fins", 2, 1300], ["sway", 2, 2300],
+    ["glance", 3, 2200], ["bubbles", 2, 2600], ["fins", 2, 1300],
     ["yawn", 1, 1500], ["hop", 1, 900], ["stretch", 1, 1700],
   ]
 
@@ -444,7 +441,7 @@
     if (f.kind === "yawn") return e < 1000 ? "yawn" : e < 1150 ? "blink" : "idle0"
     if (f.kind === "fins") return Math.floor(e / 130) % 2 ? "finUp" : "idle0"
     if (f.kind === "stretch") return e < 1300 ? "stretch0" : "idle1"
-    return null // glance, sway and hop use the normal idle frames
+    return null // glance and hop use the normal idle frames
   }
 
   // During a glance the eyes look left, right, then up, whatever the cursor is doing.

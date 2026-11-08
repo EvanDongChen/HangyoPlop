@@ -1038,7 +1038,7 @@ if (process.env.HANGYO_TOUR) {
       store.set("position", { cx: wa.x + wa.width / 2, bottom: wa.y + wa.height / 2 + 150 })
       applyLayout({ mode: "normal" })
       await wait(500)
-      for (const kind of ["glance", "bubbles", "fins", "sway", "yawn", "hop", "stretch"]) {
+      for (const kind of ["glance", "bubbles", "fins", "yawn", "hop", "stretch"]) {
         fs.mkdirSync(path.join(dir, "fidgets", kind), { recursive: true })
         const ms = await win.webContents.executeJavaScript(`window.__hangyoFidget(${JSON.stringify(kind)})`)
         const until = Date.now() + ms + 500
